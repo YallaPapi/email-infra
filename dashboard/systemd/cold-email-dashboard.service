@@ -1,0 +1,45 @@
+[Unit]
+Description=Cold Email Infrastructure Dashboard
+Documentation=https://github.com/your-org/cold-email-infrastructure
+After=network.target postgresql.service mysql.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=dashboard
+Group=dashboard
+WorkingDirectory=/opt/cold-email-dashboard/dashboard
+Environment=PATH=/opt/cold-email-dashboard/venv/bin
+EnvironmentFile=/etc/cold-email-dashboard/dashboard.env
+ExecStart=/opt/cold-email-dashboard/venv/bin/python app.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cold-email-dashboard /var/log/cold-email-dashboard
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

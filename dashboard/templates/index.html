@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Cold Email Infrastructure{% endblock %}
+
+{% block content %}
+<div class="col-md-2 sidebar">
+    <h5 class="text-white mb-3">Quick Actions</h5>
+    <a href="#" onclick="refreshStatus()"><i class="fas fa-sync"></i> Refresh Status</a>
+    <a href="#" onclick="testDNS()"><i class="fas fa-globe"></i> Test DNS</a>
+    <a href="#" onclick="checkMailcow()"><i class="fas fa-server"></i> Check Mailcow</a>
+    <a href="#" onclick="validateConfig()"><i class="fas fa-check-circle"></i> Validate Config</a>
+    
+    <h5 class="text-white mb-3 mt-4">Components</h5>
+    <a href="#dns-section"><i class="fas fa-network-wired"></i> DNS Manager</a>
+    <a href="#mailcow-section"><i class="fas fa-mail-bulk"></i> Mailcow</a>
+    <a href="#vps-section"><i class="fas fa-hdd"></i> VPS Status</a>
+    <a href="#email-section"><i class="fas fa-envelope-open"></i> Email Config</a>
+</div>
+
+<div class="col-md-10 main-content">
+    <h2 class="mb-4">System Status Dashboard</h2>
+    
+    <!-- Status Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card status-card" id="dns-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-globe icon-info"></i> DNS Status</h5>
+                    <p class="card-text" id="dns-status">Checking...</p>
+                    <span class="badge badge-status" id="dns-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card" id="mailcow-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-server icon-info"></i> Mailcow</h5>
+                    <p class="card-text" id="mailcow-status">Checking...</p>
+                    <span class="badge badge-status" id="mailcow-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card" id="vps-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-hdd icon-info"></i> VPS</h5>
+                    <p class="card-text" id="vps-status">Checking...</p>
+                    <span class="badge badge-status" id="vps-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card" id="email-card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-envelope icon-info"></i> Email Config</h5>
+                    <p class="card-text" id="email-status">Checking...</p>
+                    <span class="badge badge-status" id="email-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DNS Testing Section -->
+    <div class="card mb-4" id="dns-section">
+        <div class="card-header bg-primary text-white">
+            <h5><i class="fas fa-network-wired"></i> DNS Configuration Test</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="domain-input" placeholder="Enter domain to test (e.g., example.com)">
+                        <button class="btn btn-primary" onclick="testDomainDNS()">Test DNS Records</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success w-100" onclick="autoConfigureDNS()">
+                        <i class="fas fa-magic"></i> Auto-Configure DNS
+                    </button>
+                </div>
+            </div>
+            <div id="dns-results" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Email Configuration Details -->
+    <div class="card mb-4" id="email-section">
+        <div class="card-header bg-info text-white">
+            <h5><i class="fas fa-envelope-open"></i> Email Configuration</h5>
+        </div>
+        <div class="card-body">
+            <div class="row" id="email-config-details">
+                <div class="col-md-6">
+                    <p><strong>Domain:</strong> <span id="config-domain">Loading...</span></p>
+                    <p><strong>Server IP:</strong> <span id="config-server-ip">Loading...</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Admin Email:</strong> <span id="config-admin-email">Loading...</span></p>
+                    <p><strong>DMARC Email:</strong> <span id="config-dmarc-email">Loading...</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Logs -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5><i class="fas fa-terminal"></i> System Output</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="terminal-output" id="terminal-output">
+                > System initialized...
+                > Waiting for commands...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DNS Results Modal -->
+<div class="modal fade" id="dnsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">DNS Records Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="dns-modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Terminal output helper
+function addTerminalOutput(message, type = 'info') {
+    const terminal = document.getElementById('terminal-output');
+    const timestamp = new Date().toLocaleTimeString();
+    const prefix = type === 'error' ? '[ERROR]' : type === 'success' ? '[SUCCESS]' : '[INFO]';
+    terminal.innerHTML += `\n> ${timestamp} ${prefix} ${message}`;
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+// Load system status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStatus();
+});
+
+// Refresh all status checks
+function refreshStatus() {
+    addTerminalOutput('Refreshing system status...');
+    
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            updateStatusCard('dns', data.dns);
+            updateStatusCard('mailcow', data.mailcow);
+            updateStatusCard('vps', data.vps);
+            updateEmailConfig(data.email);
+            addTerminalOutput('Status refresh complete', 'success');
+        })
+        .catch(error => {
+            addTerminalOutput('Failed to refresh status: ' + error, 'error');
+        });
+}
+
+// Update status card display
+function updateStatusCard(component, status) {
+    const card = document.getElementById(`${component}-card`);
+    const statusText = document.getElementById(`${component}-status`);
+    const badge = document.getElementById(`${component}-badge`);
+    const icon = card.querySelector('i');
+    
+    // Remove all status classes
+    card.classList.remove('status-success', 'status-warning', 'status-error', 'status-info');
+    icon.classList.remove('icon-success', 'icon-warning', 'icon-error', 'icon-info');
+    badge.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-info');
+    
+    // Apply new status
+    if (status.status === 'success') {
+        card.classList.add('status-success');
+        icon.classList.add('icon-success');
+        badge.classList.add('bg-success');
+        badge.textContent = 'Active';
+    } else if (status.status === 'warning') {
+        card.classList.add('status-warning');
+        icon.classList.add('icon-warning');
+        badge.classList.add('bg-warning');
+        badge.textContent = 'Warning';
+    } else if (status.status === 'error') {
+        card.classList.add('status-error');
+        icon.classList.add('icon-error');
+        badge.classList.add('bg-danger');
+        badge.textContent = 'Error';
+    } else {
+        card.classList.add('status-info');
+        icon.classList.add('icon-info');
+        badge.classList.add('bg-info');
+        badge.textContent = 'Info';
+    }
+    
+    statusText.textContent = status.message;
+}
+
+// Update email configuration display
+function updateEmailConfig(config) {
+    if (config.data) {
+        document.getElementById('config-domain').textContent = config.data.domain || 'Not configured';
+        document.getElementById('config-server-ip').textContent = config.data.server_ip || 'Not configured';
+        document.getElementById('config-admin-email').textContent = config.data.admin_email || 'Not configured';
+        document.getElementById('config-dmarc-email').textContent = config.data.dmarc_email || 'Not configured';
+    }
+    updateStatusCard('email', config);
+}
+
+// Test DNS for a specific domain
+function testDomainDNS() {
+    const domain = document.getElementById('domain-input').value;
+    if (!domain) {
+        alert('Please enter a domain to test');
+        return;
+    }
+    
+    addTerminalOutput(`Testing DNS records for ${domain}...`);
+    
+    fetch('/api/test-dns', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({domain: domain})
+    })
+    .then(response => response.json())
+    .then(data => {
+        displayDNSResults(data, domain);
+        addTerminalOutput(`DNS test complete for ${domain}`, 'success');
+    })
+    .catch(error => {
+        addTerminalOutput(`DNS test failed: ${error}`, 'error');
+    });
+}
+
+// Display DNS test results
+function displayDNSResults(data, domain) {
+    let html = `<h5>DNS Records for ${domain}</h5>`;
+    
+    if (data.status === 'error') {
+        html += `<div class="alert alert-danger">${data.message}</div>`;
+    } else if (data.data) {
+        // A Records
+        html += '<div class="mb-3"><h6>A Records:</h6>';
+        if (data.data.A && data.data.A.length > 0) {
+            html += '<ul>' + data.data.A.map(r => `<li>${r}</li>`).join('') + '</ul>';
+        } else {
+            html += '<p class="text-warning">No A records found</p>';
+        }
+        html += '</div>';
+        
+        // MX Records
+        html += '<div class="mb-3"><h6>MX Records:</h6>';
+        if (data.data.MX && data.data.MX.length > 0) {
+            html += '<ul>' + data.data.MX.map(r => `<li>${r}</li>`).join('') + '</ul>';
+        } else {
+            html += '<p class="text-warning">No MX records found</p>';
+        }
+        html += '</div>';
+        
+        // SPF Records
+        html += '<div class="mb-3"><h6>SPF Records:</h6>';
+        if (data.data.SPF && data.data.SPF.length > 0) {
+            html += '<pre class="bg-light p-2">' + data.data.SPF.join('\n') + '</pre>';
+        } else {
+            html += '<p class="text-warning">No SPF records found</p>';
+        }
+        html += '</div>';
+        
+        // DMARC Records
+        html += '<div class="mb-3"><h6>DMARC Records:</h6>';
+        if (data.data.DMARC && data.data.DMARC.length > 0) {
+            html += '<pre class="bg-light p-2">' + data.data.DMARC.join('\n') + '</pre>';
+        } else {
+            html += '<p class="text-warning">No DMARC records found</p>';
+        }
+        html += '</div>';
+        
+        // DKIM Records
+        html += '<div class="mb-3"><h6>DKIM Records:</h6>';
+        if (data.data.DKIM && data.data.DKIM.length > 0) {
+            html += '<pre class="bg-light p-2">' + data.data.DKIM.join('\n') + '</pre>';
+        } else {
+            html += '<p class="text-warning">No DKIM records found</p>';
+        }
+        html += '</div>';
+    }
+    
+    document.getElementById('dns-modal-body').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('dnsModal')).show();
+}
+
+// Auto-configure DNS
+function autoConfigureDNS() {
+    if (confirm('This will attempt to auto-configure DNS records. Continue?')) {
+        addTerminalOutput('Starting automatic DNS configuration...');
+        fetch('/api/install', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({component: 'dns'})
+        })
+        .then(response => response.json())
+        .then(data => {
+            addTerminalOutput(data.message, data.status === 'error' ? 'error' : 'success');
+            if (data.output) {
+                addTerminalOutput(data.output);
+            }
+        });
+    }
+}
+
+// Check Mailcow status
+function checkMailcow() {
+    addTerminalOutput('Checking Mailcow status...');
+    fetch('/api/install', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({component: 'mailcow'})
+    })
+    .then(response => response.json())
+    .then(data => {
+        addTerminalOutput(data.message, data.status === 'error' ? 'error' : 'info');
+    });
+}
+
+// Validate configuration
+function validateConfig() {
+    addTerminalOutput('Validating configuration...');
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(data => {
+            let issues = [];
+            if (!data.domain || data.domain === '') issues.push('Domain not configured');
+            if (!data.server_ip || data.server_ip === '') issues.push('Server IP not configured');
+            if (!data.admin_email || data.admin_email === '') issues.push('Admin email not configured');
+            if (data.cloudflare_token === 'Not configured') issues.push('Cloudflare API token not configured');
+            
+            if (issues.length === 0) {
+                addTerminalOutput('Configuration validation passed!', 'success');
+            } else {
+                addTerminalOutput('Configuration issues found:', 'warning');
+                issues.forEach(issue => addTerminalOutput('  - ' + issue, 'warning'));
+            }
+        });
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshStatus, 30000);
+</script>
+{% endblock %}

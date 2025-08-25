@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+
+{% block title %}Email Testing Interface - Cold Email Infrastructure{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-card {
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0,0,0,.1);
+        margin-bottom: 30px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .test-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,.15);
+    }
+    .test-card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border: none;
+    }
+    .test-card-body {
+        padding: 25px;
+    }
+    .test-status {
+        display: none;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+    .test-status.show {
+        display: block;
+    }
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .progress-container {
+        margin: 20px 0;
+    }
+    .dns-record {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 5px 0;
+    }
+    .dns-record-type {
+        font-weight: bold;
+        color: #495057;
+    }
+    .dns-record-value {
+        font-family: 'Courier New', monospace;
+        background: white;
+        padding: 5px;
+        border-radius: 3px;
+        margin-top: 5px;
+    }
+    .copy-btn {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+    }
+    .blacklist-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        margin: 3px 0;
+        border-radius: 5px;
+    }
+    .blacklist-clean {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
+    .blacklist-listed {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
+    .modal-lg {
+        max-width: 800px;
+    }
+    .form-floating {
+        margin-bottom: 20px;
+    }
+    .btn-test {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+    .btn-test:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    .metrics-card {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 10px 0;
+    }
+    .warmup-progress {
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+        color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="col-12">
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-vial text-primary"></i> Email Infrastructure Testing</h2>
+            <button class="btn btn-outline-primary" onclick="runAllTests()">
+                <i class="fas fa-play"></i> Run All Tests
+            </button>
+        </div>
+
+        <!-- Email Sending Test -->
+        <div class="test-card">
+            <div class="test-card-header">
+                <h4><i class="fas fa-paper-plane"></i> Email Sending Test</h4>
+                <p class="mb-0">Test email delivery and SMTP connectivity</p>
+            </div>
+            <div class="test-card-body">
+                <form id="emailTestForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="testEmailTo" placeholder="recipient@example.com" required>
+                                <label for="testEmailTo">To Email Address</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="testEmailFrom" placeholder="sender@yourdomain.com">
+                                <label for="testEmailFrom">From Email Address</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="testEmailSubject" placeholder="Test Email" value="Cold Email Infrastructure Test">
+                        <label for="testEmailSubject">Subject</label>
+                    </div>
+                    <div class="form-floating">
+                        <textarea class="form-control" id="testEmailBody" placeholder="Email body" style="height: 120px">This is a test email sent from the Cold Email Infrastructure dashboard to verify email delivery functionality.</textarea>
+                        <label for="testEmailBody">Email Body</label>
+                    </div>
+                    <button type="submit" class="btn btn-test">
+                        <i class="fas fa-paper-plane"></i> Send Test Email
+                    </button>
+                </form>
+                <div id="emailTestStatus" class="test-status"></div>
+            </div>
+        </div>
+
+        <!-- SMTP Connection Test -->
+        <div class="test-card">
+            <div class="test-card-header">
+                <h4><i class="fas fa-server"></i> SMTP Connection Test</h4>
+                <p class="mb-0">Verify SMTP server connectivity and authentication</p>
+            </div>
+            <div class="test-card-body">
+                <form id="smtpTestForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="smtpHost" placeholder="smtp.yourdomain.com">
+                                <label for="smtpHost">SMTP Host</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="smtpPort" placeholder="587" value="587">
+                                <label for="smtpPort">Port</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <select class="form-select" id="smtpSecurity">
+                                    <option value="tls">STARTTLS</option>
+                                    <option value="ssl">SSL/TLS</option>
+                                    <option value="none">None</option>
+                                </select>
+                                <label for="smtpSecurity">Security</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="smtpUsername" placeholder="username">
+                                <label for="smtpUsername">Username</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="password" class="form-control" id="smtpPassword" placeholder="password">
+                                <label for="smtpPassword">Password</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-test">
+                        <i class="fas fa-plug"></i> Test SMTP Connection
+                    </button>
+                </form>
+                <div id="smtpTestStatus" class="test-status"></div>
+            </div>
+        </div>
+
+        <!-- DNS Validation -->
+        <div class="test-card">
+            <div class="test-card-header">
+                <h4><i class="fas fa-globe"></i> DNS Record Validation</h4>
+                <p class="mb-0">Check SPF, DKIM, DMARC, and MX records</p>
+            </div>
+            <div class="test-card-body">
+                <form id="dnsTestForm">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="testDomain" placeholder="yourdomain.com" required>
+                        <label for="testDomain">Domain to Test</label>
+                    </div>
+                    <button type="submit" class="btn btn-test">
+                        <i class="fas fa-search"></i> Validate DNS Records
+                    </button>
+                </form>
+                <div id="dnsTestStatus" class="test-status"></div>
+                <div id="dnsResults" style="display: none;">
+                    <h5 class="mt-4">DNS Records Found:</h5>
+                    <div id="dnsRecordsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blacklist Checker -->
+        <div class="test-card">
+            <div class="test-card-header">
+                <h4><i class="fas fa-shield-alt"></i> Blacklist Status Checker</h4>
+                <p class="mb-0">Check if your IP or domain is on major blacklists</p>
+            </div>
+            <div class="test-card-body">
+                <form id="blacklistTestForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="checkIP" placeholder="192.168.1.1">
+                                <label for="checkIP">IP Address to Check</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="checkDomain" placeholder="yourdomain.com">
+                                <label for="checkDomain">Domain to Check</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-test">
+                        <i class="fas fa-search"></i> Check Blacklist Status
+                    </button>
+                </form>
+                <div id="blacklistTestStatus" class="test-status"></div>
+                <div id="blacklistResults" style="display: none;">
+                    <h5 class="mt-4">Blacklist Check Results:</h5>
+                    <div id="blacklistList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Warmup Campaign -->
+        <div class="test-card">
+            <div class="test-card-header">
+                <h4><i class="fas fa-fire"></i> Email Warmup Campaign</h4>
+                <p class="mb-0">Start gradual email sending to improve deliverability</p>
+            </div>
+            <div class="test-card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="metrics-card text-center">
+                            <h6>Current Reputation</h6>
+                            <h3 id="reputationScore">--</h3>
+                            <small>Sender Score</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="metrics-card text-center">
+                            <h6>Daily Volume</h6>
+                            <h3 id="dailyVolume">--</h3>
+                            <small>Emails/Day</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="metrics-card text-center">
+                            <h6>Campaign Day</h6>
+                            <h3 id="campaignDay">--</h3>
+                            <small>of 30 days</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="warmupForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="warmupFromEmail" placeholder="sender@yourdomain.com" required>
+                                <label for="warmupFromEmail">From Email</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="warmupDuration">
+                                    <option value="14">14 Days</option>
+                                    <option value="30" selected>30 Days</option>
+                                    <option value="60">60 Days</option>
+                                </select>
+                                <label for="warmupDuration">Campaign Duration</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-test">
+                        <i class="fas fa-rocket"></i> Start Warmup Campaign
+                    </button>
+                </form>
+                
+                <div id="warmupStatus" class="test-status"></div>
+                <div id="warmupProgress" class="warmup-progress" style="display: none;">
+                    <h6>Warmup Progress</h6>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">Emails Sent</small>
+                            <div id="emailsSent">0</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">Success Rate</small>
+                            <div id="successRate">0%</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">Bounce Rate</small>
+                            <div id="bounceRate">0%</div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <small class="text-muted">Next Send</small>
+                            <div id="nextSend">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Results Modal -->
+<div class="modal fade" id="testResultsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detailed Test Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyToClipboard('modalContent')">
+                    <i class="fas fa-copy"></i> Copy Results
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global test utilities
+function showStatus(elementId, message, type = 'info') {
+    const statusElement = document.getElementById(elementId);
+    statusElement.className = `test-status alert alert-${type} show`;
+    statusElement.innerHTML = message;
+}
+
+function showLoading(elementId, message = 'Processing...') {
+    const statusElement = document.getElementById(elementId);
+    statusElement.className = 'test-status alert alert-info show';
+    statusElement.innerHTML = `<div class="loading-spinner"></div> ${message}`;
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.innerText || element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary feedback
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => btn.innerHTML = originalText, 2000);
+    });
+}
+
+// Email Test Form
+document.getElementById('emailTestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    showLoading('emailTestStatus', 'Sending test email...');
+    
+    try {
+        const response = await fetch('/api/test-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                to: document.getElementById('testEmailTo').value,
+                from: document.getElementById('testEmailFrom').value,
+                subject: document.getElementById('testEmailSubject').value,
+                body: document.getElementById('testEmailBody').value
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showStatus('emailTestStatus', 
+                `<i class="fas fa-check-circle"></i> Email sent successfully!<br>
+                <small>Message ID: ${result.message_id || 'N/A'}<br>
+                Delivery time: ${result.delivery_time || 'N/A'}ms</small>`, 
+                'success');
+        } else {
+            showStatus('emailTestStatus', 
+                `<i class="fas fa-exclamation-circle"></i> Email sending failed: ${result.message}`, 
+                'danger');
+        }
+    } catch (error) {
+        showStatus('emailTestStatus', 
+            `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`, 
+            'danger');
+    }
+});
+
+// SMTP Test Form
+document.getElementById('smtpTestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    showLoading('smtpTestStatus', 'Testing SMTP connection...');
+    
+    try {
+        const response = await fetch('/api/test-smtp', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                host: document.getElementById('smtpHost').value,
+                port: parseInt(document.getElementById('smtpPort').value),
+                security: document.getElementById('smtpSecurity').value,
+                username: document.getElementById('smtpUsername').value,
+                password: document.getElementById('smtpPassword').value
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showStatus('smtpTestStatus', 
+                `<i class="fas fa-check-circle"></i> SMTP connection successful!<br>
+                <small>Server: ${result.server_info || 'N/A'}<br>
+                Features: ${(result.features || []).join(', ')}</small>`, 
+                'success');
+        } else {
+            showStatus('smtpTestStatus', 
+                `<i class="fas fa-exclamation-circle"></i> SMTP connection failed: ${result.message}`, 
+                'danger');
+        }
+    } catch (error) {
+        showStatus('smtpTestStatus', 
+            `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`, 
+            'danger');
+    }
+});
+
+// DNS Test Form
+document.getElementById('dnsTestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const domain = document.getElementById('testDomain').value;
+    
+    showLoading('dnsTestStatus', 'Checking DNS records...');
+    
+    try {
+        const response = await fetch('/api/test-dns', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ domain })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showStatus('dnsTestStatus', 
+                `<i class="fas fa-check-circle"></i> DNS records retrieved successfully!`, 
+                'success');
+            displayDNSResults(result.data);
+        } else {
+            showStatus('dnsTestStatus', 
+                `<i class="fas fa-exclamation-circle"></i> DNS lookup failed: ${result.message}`, 
+                'danger');
+        }
+    } catch (error) {
+        showStatus('dnsTestStatus', 
+            `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`, 
+            'danger');
+    }
+});
+
+function displayDNSResults(data) {
+    const resultsList = document.getElementById('dnsRecordsList');
+    const resultsContainer = document.getElementById('dnsResults');
+    
+    let html = '';
+    
+    for (const [recordType, records] of Object.entries(data)) {
+        if (records && records.length > 0) {
+            html += `<div class="dns-record">
+                <div class="dns-record-type">${recordType} Records:</div>`;
+            
+            records.forEach(record => {
+                html += `<div class="dns-record-value">
+                    ${record}
+                    <button class="btn btn-sm btn-outline-secondary copy-btn ms-2" 
+                            onclick="copyToClipboard(this.previousElementSibling)">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>`;
+            });
+            
+            html += `</div>`;
+        }
+    }
+    
+    resultsList.innerHTML = html;
+    resultsContainer.style.display = 'block';
+}
+
+// Blacklist Test Form
+document.getElementById('blacklistTestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const ip = document.getElementById('checkIP').value;
+    const domain = document.getElementById('checkDomain').value;
+    
+    if (!ip && !domain) {
+        showStatus('blacklistTestStatus', 'Please enter either an IP address or domain to check.', 'warning');
+        return;
+    }
+    
+    showLoading('blacklistTestStatus', 'Checking blacklist status...');
+    
+    try {
+        const response = await fetch('/api/test-blacklist', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ip, domain })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showStatus('blacklistTestStatus', 
+                `<i class="fas fa-check-circle"></i> Blacklist check completed!`, 
+                'success');
+            displayBlacklistResults(result.data);
+        } else {
+            showStatus('blacklistTestStatus', 
+                `<i class="fas fa-exclamation-circle"></i> Blacklist check failed: ${result.message}`, 
+                'danger');
+        }
+    } catch (error) {
+        showStatus('blacklistTestStatus', 
+            `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`, 
+            'danger');
+    }
+});
+
+function displayBlacklistResults(data) {
+    const resultsList = document.getElementById('blacklistList');
+    const resultsContainer = document.getElementById('blacklistResults');
+    
+    let html = '';
+    let totalListed = 0;
+    
+    for (const [provider, result] of Object.entries(data)) {
+        const isListed = result.listed;
+        totalListed += isListed ? 1 : 0;
+        
+        html += `<div class="blacklist-item ${isListed ? 'blacklist-listed' : 'blacklist-clean'}">
+            <span><strong>${provider}</strong></span>
+            <span>
+                ${isListed ? 
+                    '<i class="fas fa-exclamation-triangle text-danger"></i> Listed' : 
+                    '<i class="fas fa-check-circle text-success"></i> Clean'}
+            </span>
+        </div>`;
+    }
+    
+    // Add summary
+    const total = Object.keys(data).length;
+    const summaryClass = totalListed === 0 ? 'alert-success' : totalListed <= 2 ? 'alert-warning' : 'alert-danger';
+    html = `<div class="alert ${summaryClass}">
+        <strong>Summary:</strong> Listed on ${totalListed} of ${total} blacklists checked.
+    </div>` + html;
+    
+    resultsList.innerHTML = html;
+    resultsContainer.style.display = 'block';
+}
+
+// Warmup Campaign Form
+document.getElementById('warmupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const fromEmail = document.getElementById('warmupFromEmail').value;
+    const duration = document.getElementById('warmupDuration').value;
+    
+    showLoading('warmupStatus', 'Starting warmup campaign...');
+    
+    try {
+        const response = await fetch('/api/start-warmup', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ fromEmail, duration })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            showStatus('warmupStatus', 
+                `<i class="fas fa-check-circle"></i> Warmup campaign started successfully!<br>
+                <small>Campaign ID: ${result.campaign_id}<br>
+                Duration: ${duration} days</small>`, 
+                'success');
+            displayWarmupProgress(result.data);
+        } else {
+            showStatus('warmupStatus', 
+                `<i class="fas fa-exclamation-circle"></i> Failed to start warmup campaign: ${result.message}`, 
+                'danger');
+        }
+    } catch (error) {
+        showStatus('warmupStatus', 
+            `<i class="fas fa-exclamation-triangle"></i> Error: ${error.message}`, 
+            'danger');
+    }
+});
+
+function displayWarmupProgress(data) {
+    const progressContainer = document.getElementById('warmupProgress');
+    
+    // Update metrics
+    document.getElementById('reputationScore').textContent = data.reputation_score || '--';
+    document.getElementById('dailyVolume').textContent = data.daily_volume || '--';
+    document.getElementById('campaignDay').textContent = data.campaign_day || '--';
+    
+    // Update progress bar
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const progressPercent = ((data.campaign_day || 0) / (data.total_days || 30)) * 100;
+    progressBar.style.width = `${progressPercent}%`;
+    progressBar.textContent = `${Math.round(progressPercent)}%`;
+    
+    // Update stats
+    document.getElementById('emailsSent').textContent = data.emails_sent || '0';
+    document.getElementById('successRate').textContent = `${data.success_rate || 0}%`;
+    document.getElementById('bounceRate').textContent = `${data.bounce_rate || 0}%`;
+    document.getElementById('nextSend').textContent = data.next_send || '--';
+    
+    progressContainer.style.display = 'block';
+}
+
+// Run All Tests Function
+async function runAllTests() {
+    const tests = [
+        { form: 'smtpTestForm', name: 'SMTP Connection' },
+        { form: 'dnsTestForm', name: 'DNS Records' },
+        { form: 'blacklistTestForm', name: 'Blacklist Check' }
+    ];
+    
+    for (const test of tests) {
+        console.log(`Running ${test.name} test...`);
+        const form = document.getElementById(test.form);
+        if (form) {
+            const event = new Event('submit');
+            form.dispatchEvent(event);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait between tests
+        }
+    }
+}
+
+// Auto-refresh warmup progress if campaign is active
+function checkWarmupStatus() {
+    fetch('/api/warmup-status')
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success' && result.data.active) {
+                displayWarmupProgress(result.data);
+            }
+        })
+        .catch(error => console.log('Warmup status check failed:', error));
+}
+
+// Check warmup status every 30 seconds
+setInterval(checkWarmupStatus, 30000);
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
+    checkWarmupStatus();
+    
+    // Auto-fill current server IP if available
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.vps && data.vps.data && data.vps.data.public_ip) {
+                document.getElementById('checkIP').value = data.vps.data.public_ip;
+            }
+            if (data.email && data.email.data && data.email.data.domain) {
+                document.getElementById('testDomain').value = data.email.data.domain;
+                document.getElementById('checkDomain').value = data.email.data.domain;
+            }
+        })
+        .catch(error => console.log('Status fetch failed:', error));
+});
+</script>
+{% endblock %}

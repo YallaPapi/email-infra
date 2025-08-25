@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - Cold Email Infrastructure{% endblock %}
+
+{% block content %}
+<div class="col-md-12 main-content">
+    <h2 class="mb-4">System Configuration</h2>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Configuration values are loaded from environment variables. Update your .env file to change these settings.
+    </div>
+    
+    <div class="row">
+        <!-- Current Configuration -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-cog"></i> Current Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Domain:</strong></label>
+                        <input type="text" class="form-control" id="current-domain" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Server IP:</strong></label>
+                        <input type="text" class="form-control" id="current-server-ip" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Admin Email:</strong></label>
+                        <input type="text" class="form-control" id="current-admin-email" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Cloudflare API Token:</strong></label>
+                        <input type="text" class="form-control" id="current-cf-token" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Mailcow API Key:</strong></label>
+                        <input type="text" class="form-control" id="current-mailcow-key" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuration Checklist -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-check-circle"></i> Configuration Checklist</h5>
+                </div>
+                <div class="card-body">
+                    <div class="checklist-item" id="check-domain">
+                        <i class="fas fa-circle-notch fa-spin"></i> Domain Configuration
+                    </div>
+                    <div class="checklist-item" id="check-ip">
+                        <i class="fas fa-circle-notch fa-spin"></i> Server IP Configuration
+                    </div>
+                    <div class="checklist-item" id="check-email">
+                        <i class="fas fa-circle-notch fa-spin"></i> Admin Email Configuration
+                    </div>
+                    <div class="checklist-item" id="check-cloudflare">
+                        <i class="fas fa-circle-notch fa-spin"></i> Cloudflare API Integration
+                    </div>
+                    <div class="checklist-item" id="check-mailcow">
+                        <i class="fas fa-circle-notch fa-spin"></i> Mailcow API Integration
+                    </div>
+                    <div class="checklist-item" id="check-dns">
+                        <i class="fas fa-circle-notch fa-spin"></i> DNS Records
+                    </div>
+                    <div class="checklist-item" id="check-ssl">
+                        <i class="fas fa-circle-notch fa-spin"></i> SSL Certificates
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="generateEnvFile()">
+                        <i class="fas fa-file-code"></i> Generate .env Template
+                    </button>
+                    <button class="btn btn-success w-100 mb-2" onclick="validateAllConfig()">
+                        <i class="fas fa-check"></i> Validate All Settings
+                    </button>
+                    <button class="btn btn-info w-100" onclick="exportConfig()">
+                        <i class="fas fa-download"></i> Export Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Environment Variables Guide -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5><i class="fas fa-book"></i> Environment Variables Guide</h5>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3">
+# Required Environment Variables
+DOMAIN=yourdomain.com              # Your email domain
+SERVER_IP=your.server.ip           # Your VPS IP address
+ADMIN_EMAIL=admin@yourdomain.com   # Administrator email
+DMARC_EMAIL=dmarc@yourdomain.com   # DMARC reports email
+
+# API Keys
+CLOUDFLARE_API_TOKEN=your_token    # Cloudflare API token
+MAILCOW_API_KEY=your_api_key       # Mailcow API key
+MAILCOW_HOSTNAME=mail.domain.com   # Mailcow hostname
+
+# Optional Settings
+DKIM_SELECTOR=default              # DKIM selector (default: 'default')
+FLASK_PORT=5000                    # Dashboard port (default: 5000)
+FLASK_SECRET_KEY=your_secret       # Flask session key
+            </pre>
+        </div>
+    </div>
+</div>
+
+<style>
+.checklist-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-left: 3px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+.checklist-item.success {
+    border-left-color: #28a745;
+    background-color: #d4edda;
+}
+.checklist-item.error {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+.checklist-item.warning {
+    border-left-color: #ffc107;
+    background-color: #fff3cd;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadConfiguration();
+});
+
+function loadConfiguration() {
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(data => {
+            // Update current configuration display
+            document.getElementById('current-domain').value = data.domain || 'Not configured';
+            document.getElementById('current-server-ip').value = data.server_ip || 'Not configured';
+            document.getElementById('current-admin-email').value = data.admin_email || 'Not configured';
+            document.getElementById('current-cf-token').value = data.cloudflare_token || 'Not configured';
+            document.getElementById('current-mailcow-key').value = data.mailcow_api_key || 'Not configured';
+            
+            // Update checklist
+            updateChecklist('check-domain', data.domain && data.domain !== '');
+            updateChecklist('check-ip', data.server_ip && data.server_ip !== '');
+            updateChecklist('check-email', data.admin_email && data.admin_email !== '');
+            updateChecklist('check-cloudflare', data.cloudflare_token === 'Configured');
+            updateChecklist('check-mailcow', data.mailcow_api_key === 'Configured');
+            
+            // Check DNS and SSL separately
+            checkDNSStatus();
+        });
+}
+
+function updateChecklist(itemId, isConfigured) {
+    const item = document.getElementById(itemId);
+    item.classList.remove('success', 'error', 'warning');
+    
+    if (isConfigured) {
+        item.classList.add('success');
+        item.innerHTML = '<i class="fas fa-check-circle text-success"></i> ' + item.textContent.trim();
+    } else {
+        item.classList.add('error');
+        item.innerHTML = '<i class="fas fa-times-circle text-danger"></i> ' + item.textContent.trim();
+    }
+}
+
+function checkDNSStatus() {
+    // This would check actual DNS status
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            updateChecklist('check-dns', data.dns && data.dns.status === 'success');
+            // SSL check would go here
+            updateChecklist('check-ssl', false); // Placeholder
+        });
+}
+
+function generateEnvFile() {
+    const template = `# Cold Email Infrastructure Configuration
+# Copy this to .env and fill in your values
+
+DOMAIN=
+SERVER_IP=
+ADMIN_EMAIL=
+DMARC_EMAIL=
+CLOUDFLARE_API_TOKEN=
+MAILCOW_API_KEY=
+MAILCOW_HOSTNAME=
+DKIM_SELECTOR=default
+FLASK_PORT=5000
+FLASK_SECRET_KEY=`;
+    
+    const blob = new Blob([template], {type: 'text/plain'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'env.template';
+    a.click();
+}
+
+function validateAllConfig() {
+    alert('Validating all configuration settings...');
+    loadConfiguration();
+}
+
+function exportConfig() {
+    fetch('/api/config')
+        .then(response => response.json())
+        .then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'config-export.json';
+            a.click();
+        });
+}
+</script>
+{% endblock %}
