@@ -1,0 +1,433 @@
+{
+  "description": "Firewall rules configuration for Cold Email Infrastructure VPS",
+  "version": "1.0.0",
+  "last_updated": "2025-01-25",
+  
+  "global_settings": {
+    "default_policy": {
+      "incoming": "deny",
+      "outgoing": "allow",
+      "forward": "deny"
+    },
+    "logging": {
+      "enabled": true,
+      "log_level": "low",
+      "log_file": "/var/log/ufw.log"
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "default_limit": "6/min"
+    }
+  },
+  
+  "allow": [
+    {
+      "name": "SSH",
+      "port": 22,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "SSH access - primary port",
+      "rate_limit": "6/min",
+      "priority": 100,
+      "enabled": true
+    },
+    {
+      "name": "SSH Alternative",
+      "port": 2222,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "SSH access - alternative port",
+      "rate_limit": "6/min",
+      "priority": 101,
+      "enabled": false
+    },
+    {
+      "name": "SMTP",
+      "port": 25,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "SMTP mail transfer",
+      "rate_limit": "100/hour",
+      "priority": 200,
+      "enabled": true
+    },
+    {
+      "name": "SMTP Submission",
+      "port": 587,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "SMTP submission (authenticated)",
+      "rate_limit": "200/hour",
+      "priority": 201,
+      "enabled": true
+    },
+    {
+      "name": "SMTPS",
+      "port": 465,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "SMTP over SSL/TLS",
+      "rate_limit": "200/hour",
+      "priority": 202,
+      "enabled": true
+    },
+    {
+      "name": "IMAP",
+      "port": 143,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "IMAP mail access",
+      "rate_limit": "50/min",
+      "priority": 300,
+      "enabled": true
+    },
+    {
+      "name": "IMAPS",
+      "port": 993,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "IMAP over SSL/TLS",
+      "rate_limit": "50/min",
+      "priority": 301,
+      "enabled": true
+    },
+    {
+      "name": "POP3",
+      "port": 110,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "POP3 mail access",
+      "rate_limit": "30/min",
+      "priority": 302,
+      "enabled": true
+    },
+    {
+      "name": "POP3S",
+      "port": 995,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "POP3 over SSL/TLS",
+      "rate_limit": "30/min",
+      "priority": 303,
+      "enabled": true
+    },
+    {
+      "name": "HTTP",
+      "port": 80,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "HTTP web server",
+      "rate_limit": "1000/hour",
+      "priority": 400,
+      "enabled": true
+    },
+    {
+      "name": "HTTPS",
+      "port": 443,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "HTTPS web server",
+      "rate_limit": "1000/hour",
+      "priority": 401,
+      "enabled": true
+    },
+    {
+      "name": "DNS UDP",
+      "port": 53,
+      "protocol": "udp",
+      "source": "any",
+      "destination": "any",
+      "comment": "DNS resolution (UDP)",
+      "priority": 500,
+      "enabled": true,
+      "direction": "out"
+    },
+    {
+      "name": "DNS TCP",
+      "port": 53,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "DNS resolution (TCP)",
+      "priority": 501,
+      "enabled": true,
+      "direction": "out"
+    },
+    {
+      "name": "NTP",
+      "port": 123,
+      "protocol": "udp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Network Time Protocol",
+      "priority": 502,
+      "enabled": true,
+      "direction": "out"
+    }
+  ],
+  
+  "deny": [
+    {
+      "name": "Telnet",
+      "port": 23,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Block insecure Telnet protocol",
+      "log": true,
+      "priority": 1000,
+      "enabled": true
+    },
+    {
+      "name": "FTP Control",
+      "port": 21,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Block insecure FTP protocol",
+      "log": true,
+      "priority": 1001,
+      "enabled": true
+    },
+    {
+      "name": "TFTP",
+      "port": 69,
+      "protocol": "udp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Block insecure TFTP protocol",
+      "log": true,
+      "priority": 1002,
+      "enabled": true
+    },
+    {
+      "name": "SNMP",
+      "port": 161,
+      "protocol": "udp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Block SNMP if not needed",
+      "log": true,
+      "priority": 1003,
+      "enabled": false
+    },
+    {
+      "name": "NetBIOS",
+      "port": [135, 137, 138, 139],
+      "protocol": ["tcp", "udp"],
+      "source": "any",
+      "destination": "any",
+      "comment": "Block Windows NetBIOS",
+      "log": true,
+      "priority": 1004,
+      "enabled": true
+    },
+    {
+      "name": "SMB",
+      "port": 445,
+      "protocol": "tcp",
+      "source": "any",
+      "destination": "any",
+      "comment": "Block Windows SMB",
+      "log": true,
+      "priority": 1005,
+      "enabled": true
+    }
+  ],
+  
+  "custom_rules": [
+    {
+      "name": "Allow from Management Network",
+      "source": "192.168.1.0/24",
+      "destination": "any",
+      "action": "allow",
+      "comment": "Allow all traffic from management network",
+      "priority": 50,
+      "enabled": false
+    },
+    {
+      "name": "Block Specific Country",
+      "source": "country:CN",
+      "destination": "any",
+      "action": "deny",
+      "comment": "Block traffic from specific country",
+      "log": true,
+      "priority": 900,
+      "enabled": false,
+      "requires_geoip": true
+    },
+    {
+      "name": "Rate limit SSH from specific network",
+      "port": 22,
+      "protocol": "tcp",
+      "source": "10.0.0.0/8",
+      "destination": "any",
+      "action": "allow",
+      "rate_limit": "10/min",
+      "comment": "Higher rate limit for internal network SSH",
+      "priority": 99,
+      "enabled": false
+    }
+  ],
+  
+  "application_specific": {
+    "postfix": {
+      "ports": [25, 587, 465],
+      "rate_limits": {
+        "25": "100/hour",
+        "587": "200/hour", 
+        "465": "200/hour"
+      },
+      "source_restrictions": {
+        "25": ["any"],
+        "587": ["authenticated"],
+        "465": ["authenticated"]
+      }
+    },
+    "dovecot": {
+      "ports": [143, 993, 110, 995],
+      "rate_limits": {
+        "143": "50/min",
+        "993": "50/min",
+        "110": "30/min",
+        "995": "30/min"
+      },
+      "auth_required": true
+    },
+    "nginx": {
+      "ports": [80, 443],
+      "rate_limits": {
+        "80": "1000/hour",
+        "443": "1000/hour"
+      },
+      "ddos_protection": true
+    }
+  },
+  
+  "security_policies": {
+    "brute_force_protection": {
+      "enabled": true,
+      "services": ["ssh", "smtp", "imap", "pop3"],
+      "max_attempts": 5,
+      "ban_time_minutes": 60,
+      "whitelist": [
+        "127.0.0.1",
+        "::1"
+      ]
+    },
+    "port_scanning_detection": {
+      "enabled": true,
+      "threshold": 10,
+      "time_window_seconds": 60,
+      "action": "ban",
+      "ban_time_minutes": 120
+    },
+    "geo_blocking": {
+      "enabled": false,
+      "blocked_countries": ["CN", "RU", "KP"],
+      "allowed_countries": ["US", "CA", "GB", "DE", "FR"],
+      "whitelist_ips": []
+    }
+  },
+  
+  "monitoring_and_alerting": {
+    "log_analysis": {
+      "enabled": true,
+      "alert_on_patterns": [
+        "multiple failed login attempts",
+        "port scanning detected",
+        "unusual traffic patterns",
+        "blocked connection attempts"
+      ]
+    },
+    "metrics": {
+      "enabled": true,
+      "export_to": "prometheus",
+      "metrics": [
+        "connections_per_minute",
+        "blocked_connections",
+        "allowed_connections",
+        "bytes_transferred"
+      ]
+    },
+    "notifications": {
+      "email": {
+        "enabled": false,
+        "recipients": ["admin@yourdomain.com"],
+        "severity_threshold": "warning"
+      },
+      "webhook": {
+        "enabled": false,
+        "url": "https://your-monitoring-system.com/webhook",
+        "severity_threshold": "error"
+      }
+    }
+  },
+  
+  "maintenance": {
+    "automatic_updates": {
+      "enabled": true,
+      "check_interval_hours": 24,
+      "apply_security_updates": true
+    },
+    "rule_optimization": {
+      "enabled": true,
+      "remove_unused_rules": true,
+      "consolidate_similar_rules": true
+    },
+    "backup": {
+      "enabled": true,
+      "backup_before_changes": true,
+      "retention_days": 30,
+      "backup_location": "/etc/ufw/backup"
+    }
+  },
+  
+  "environments": {
+    "development": {
+      "inherit_base": true,
+      "additional_allow": [
+        {
+          "name": "Development SSH",
+          "port": 2222,
+          "protocol": "tcp",
+          "source": "192.168.1.0/24",
+          "comment": "SSH for development"
+        }
+      ],
+      "relaxed_rate_limits": true
+    },
+    "staging": {
+      "inherit_base": true,
+      "geo_blocking": {
+        "enabled": false
+      },
+      "additional_allow": [
+        {
+          "name": "Staging Access",
+          "port": 8080,
+          "protocol": "tcp",
+          "source": "192.168.1.0/24",
+          "comment": "Staging environment access"
+        }
+      ]
+    },
+    "production": {
+      "inherit_base": true,
+      "strict_mode": true,
+      "enhanced_logging": true,
+      "all_security_features": true
+    }
+  }
+}

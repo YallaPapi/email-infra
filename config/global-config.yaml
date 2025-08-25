@@ -1,0 +1,97 @@
+---
+# Global Configuration for Cold Email Infrastructure
+project:
+  name: "Cold Email Infrastructure"
+  version: "1.0.0"
+  description: "Self-hosted cold email infrastructure automation system"
+  environment: "${EMAIL_INFRA_ENV:-development}"
+
+# Component enablement and basic configuration
+components:
+  dns:
+    enabled: true
+    config_path: "src/email-infrastructure/dns/config/"
+    provider: "cloudflare"
+    default_ttl: 300
+    
+  mailcow:
+    enabled: true
+    config_path: "src/email-infrastructure/mailcow/config/"
+    installation_path: "/opt/mailcow-dockerized"
+    api_version: "v1"
+    
+  monitoring:
+    enabled: true
+    config_path: "src/email-infrastructure/monitoring/config/"
+    check_interval: 300
+    alert_threshold: 3
+    
+  vps:
+    enabled: true
+    config_path: "src/email-infrastructure/vps/config/"
+    provider: "hetzner"
+    os: "ubuntu-22.04"
+
+# Global logging configuration
+logging:
+  level: "${EMAIL_INFRA_LOG_LEVEL:-INFO}"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "data/logs/application.log"
+  max_size: "10MB"
+  backup_count: 5
+  console_output: true
+
+# Global security settings
+security:
+  api_key_rotation_days: 90
+  password_complexity: "high"
+  audit_logging: true
+  session_timeout: 3600
+  max_failed_attempts: 5
+  lockout_duration: 900
+
+# Global database configuration
+database:
+  type: "sqlite"
+  path: "data/databases/email_infrastructure.db"
+  backup_retention_days: 30
+  max_connections: 10
+
+# Global API configuration
+api:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  version: "v1"
+  cors_enabled: true
+  rate_limit_per_minute: 100
+  
+# Global backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention_days: 30
+  compression: true
+  encryption: false
+  remote_storage: false
+
+# Global monitoring configuration  
+monitoring:
+  enabled: true
+  health_check_interval: 60
+  metrics_retention_days: 90
+  alerting_enabled: true
+  
+# Global network configuration
+network:
+  timeout: 30
+  retries: 3
+  backoff_factor: 2
+  user_agent: "EmailInfrastructure/1.0.0"
+
+# Performance tuning
+performance:
+  worker_processes: 4
+  max_concurrent_tasks: 20
+  cache_ttl: 3600
+  batch_size: 100

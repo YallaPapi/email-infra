@@ -1,0 +1,409 @@
+# SPF and DMARC Templates for Email Infrastructure
+# Templates for generating SPF and DMARC records with various configurations
+
+templates:
+  spf:
+    # Basic SPF template - minimal configuration
+    basic:
+      name: "Basic SPF"
+      description: "Simple SPF record with server IP and domain"
+      template: "v=spf1 ip4:{server_ip} a:{mail_server} ~all"
+      variables:
+        server_ip: "required"
+        mail_server: "required"
+      validation:
+        max_length: 255
+        required_mechanisms: ["v=spf1"]
+        recommended_end: ["~all", "-all"]
+      
+    # Standard SPF template - recommended for most setups
+    standard:
+      name: "Standard SPF"
+      description: "Standard SPF with common email services"
+      template: "v=spf1 ip4:{server_ip} a:{mail_server} include:_spf.google.com include:amazonses.com ~all"
+      variables:
+        server_ip: "required"
+        mail_server: "required"
+      validation:
+        max_length: 255
+        dns_lookups: 8  # Under RFC limit of 10
+      
+    # Advanced SPF template - multiple IPs and services
+    advanced:
+      name: "Advanced SPF"
+      description: "SPF with multiple IPs, networks, and service includes"
+      template: "v=spf1 ip4:{server_ip} ip4:{backup_ip} ip4:{server_network}/{netmask} a:{mail_server} mx include:_spf.google.com include:amazonses.com include:mailgun.org include:sendgrid.net {additional_includes} ~all"
+      variables:
+        server_ip: "required"
+        backup_ip: "optional"
+        server_network: "optional"
+        netmask: "24"
+        mail_server: "required"
+        additional_includes: "optional"
+      validation:
+        max_length: 255
+        dns_lookups: 10  # At RFC limit
+        
+    # Strict SPF template - hard fail policy
+    strict:
+      name: "Strict SPF"
+      description: "Strict SPF with hard fail for maximum security"
+      template: "v=spf1 ip4:{server_ip} a:{mail_server} include:_spf.google.com -all"
+      variables:
+        server_ip: "required"
+        mail_server: "required"
+      validation:
+        max_length: 255
+        policy: "strict"
+        
+    # Transitional SPF template - for migration periods
+    transitional:
+      name: "Transitional SPF"
+      description: "Permissive SPF for migration or testing"
+      template: "v=spf1 ip4:{server_ip} a:{mail_server} include:_spf.google.com include:amazonses.com ?all"
+      variables:
+        server_ip: "required"
+        mail_server: "required"
+      validation:
+        max_length: 255
+        policy: "neutral"
+        
+    # Multi-domain SPF template
+    multi_domain:
+      name: "Multi-domain SPF"
+      description: "SPF for multiple domains/subdomains"
+      template: "v=spf1 ip4:{server_ip} a:{mail_server} include:{parent_domain} mx include:_spf.google.com ~all"
+      variables:
+        server_ip: "required"
+        mail_server: "required"
+        parent_domain: "required"
+      validation:
+        max_length: 255
+        
+    # Cloud-only SPF template
+    cloud_only:
+      name: "Cloud-only SPF"
+      description: "SPF for cloud email services only"
+      template: "v=spf1 include:_spf.google.com include:amazonses.com include:mailgun.org include:sendgrid.net ~all"
+      variables: {}
+      validation:
+        max_length: 255
+        dns_lookups: 4
+
+  dmarc:
+    # None policy - monitoring only
+    monitoring:
+      name: "DMARC Monitoring"
+      description: "DMARC with none policy for monitoring and learning"
+      template: "v=DMARC1;p=none;rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=1;adkim=r;aspf=r;pct=100;rf=afrf;ri=86400"
+      variables:
+        report_email: "required"
+        forensic_email: "optional"
+      policy: "none"
+      deployment_phase: "initial"
+      
+    # Quarantine policy - moderate enforcement
+    quarantine:
+      name: "DMARC Quarantine" 
+      description: "DMARC with quarantine policy for moderate enforcement"
+      template: "v=DMARC1;p=quarantine;rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=1;adkim=r;aspf=r;pct={percentage};rf=afrf;ri=86400"
+      variables:
+        report_email: "required"
+        forensic_email: "optional"
+        percentage: "100"
+      policy: "quarantine"
+      deployment_phase: "enforcement"
+      
+    # Reject policy - maximum enforcement
+    reject:
+      name: "DMARC Reject"
+      description: "DMARC with reject policy for maximum enforcement"
+      template: "v=DMARC1;p=reject;rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=1;adkim=s;aspf=s;pct=100;rf=afrf;ri=86400"
+      variables:
+        report_email: "required"
+        forensic_email: "optional"
+      policy: "reject"
+      deployment_phase: "final"
+      alignment:
+        dkim: "strict"
+        spf: "strict"
+        
+    # Subdomain policy - specific subdomain handling
+    subdomain:
+      name: "DMARC with Subdomain Policy"
+      description: "DMARC with specific subdomain policy"
+      template: "v=DMARC1;p={domain_policy};sp={subdomain_policy};rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=1;adkim=r;aspf=r;pct=100;rf=afrf;ri=86400"
+      variables:
+        domain_policy: "quarantine"
+        subdomain_policy: "reject"
+        report_email: "required"
+        forensic_email: "optional"
+      policy: "mixed"
+      
+    # Gradual rollout - percentage-based enforcement
+    gradual:
+      name: "DMARC Gradual Rollout"
+      description: "DMARC with gradual percentage-based enforcement"
+      template: "v=DMARC1;p=quarantine;rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=1;adkim=r;aspf=r;pct={percentage};rf=afrf;ri=86400"
+      variables:
+        report_email: "required"
+        forensic_email: "optional"
+        percentage: "25"  # Start with 25%, increase gradually
+      policy: "gradual"
+      deployment_phases:
+        - percentage: 25
+          duration: 7  # days
+        - percentage: 50
+          duration: 7
+        - percentage: 75
+          duration: 7
+        - percentage: 100
+          duration: "ongoing"
+          
+    # Forensic reporting focused
+    forensic:
+      name: "DMARC Forensic Reporting"
+      description: "DMARC optimized for detailed forensic reporting"
+      template: "v=DMARC1;p=quarantine;rua=mailto:{report_email};ruf=mailto:{forensic_email};fo=0:1:d:s;adkim=r;aspf=r;pct=100;rf=afrf;ri=3600"
+      variables:
+        report_email: "required"
+        forensic_email: "required"
+      policy: "quarantine"
+      reporting:
+        forensic_options: ["auth_failure", "dkim_failure", "spf_failure", "dmarc_failure"]
+        interval: 3600  # Hourly reports
+        
+    # Enterprise template - comprehensive configuration
+    enterprise:
+      name: "DMARC Enterprise"
+      description: "Comprehensive DMARC for enterprise deployment"
+      template: "v=DMARC1;p=reject;sp=quarantine;rua=mailto:{aggregate_email},mailto:{backup_aggregate};ruf=mailto:{forensic_email};fo=1;adkim=s;aspf=s;pct=100;rf=afrf;ri=86400;rf=iodef"
+      variables:
+        aggregate_email: "required"
+        backup_aggregate: "optional"
+        forensic_email: "required"
+      policy: "reject"
+      alignment:
+        dkim: "strict"
+        spf: "strict"
+      reporting:
+        multiple_targets: true
+        formats: ["afrf", "iodef"]
+
+# Deployment strategies for DMARC
+deployment_strategies:
+  conservative:
+    name: "Conservative Deployment"
+    description: "Gradual DMARC deployment over 8 weeks"
+    phases:
+      - name: "Monitoring Phase"
+        duration: 14  # days
+        policy: "none"
+        percentage: 100
+        template: "monitoring"
+        
+      - name: "Initial Quarantine"
+        duration: 7
+        policy: "quarantine"
+        percentage: 10
+        template: "gradual"
+        
+      - name: "Increased Quarantine"
+        duration: 7
+        policy: "quarantine"
+        percentage: 25
+        template: "gradual"
+        
+      - name: "Moderate Quarantine"
+        duration: 7
+        policy: "quarantine"
+        percentage: 50
+        template: "gradual"
+        
+      - name: "High Quarantine"
+        duration: 7
+        policy: "quarantine"
+        percentage: 75
+        template: "gradual"
+        
+      - name: "Full Quarantine"
+        duration: 7
+        policy: "quarantine"
+        percentage: 100
+        template: "quarantine"
+        
+      - name: "Initial Reject"
+        duration: 7
+        policy: "reject"
+        percentage: 25
+        template: "gradual"
+        
+      - name: "Full Reject"
+        duration: "ongoing"
+        policy: "reject"
+        percentage: 100
+        template: "reject"
+        
+  aggressive:
+    name: "Aggressive Deployment"
+    description: "Quick DMARC deployment over 3 weeks"
+    phases:
+      - name: "Monitoring Phase"
+        duration: 7
+        policy: "none"
+        percentage: 100
+        template: "monitoring"
+        
+      - name: "Quarantine Phase"
+        duration: 7
+        policy: "quarantine"
+        percentage: 100
+        template: "quarantine"
+        
+      - name: "Reject Phase"
+        duration: "ongoing"
+        policy: "reject"
+        percentage: 100
+        template: "reject"
+        
+  enterprise:
+    name: "Enterprise Deployment"
+    description: "Comprehensive enterprise DMARC deployment"
+    phases:
+      - name: "Analysis Phase"
+        duration: 30
+        policy: "none"
+        percentage: 100
+        template: "monitoring"
+        requirements:
+          - "Complete email flow analysis"
+          - "Third-party service identification"
+          - "SPF/DKIM validation"
+          
+      - name: "Pilot Phase"
+        duration: 14
+        policy: "quarantine"
+        percentage: 5
+        template: "gradual"
+        requirements:
+          - "Pilot group testing"
+          - "Report analysis"
+          - "Issue resolution"
+          
+      - name: "Gradual Rollout"
+        duration: 21
+        policy: "quarantine"
+        percentage: [10, 25, 50, 100]
+        template: "gradual"
+        
+      - name: "Full Enforcement"
+        duration: "ongoing"
+        policy: "reject"
+        percentage: 100
+        template: "enterprise"
+
+# Validation rules for templates
+validation_rules:
+  spf:
+    max_length: 255
+    max_dns_lookups: 10
+    required_version: "v=spf1"
+    allowed_mechanisms:
+      - "ip4"
+      - "ip6"
+      - "a"
+      - "mx"
+      - "include"
+      - "exists"
+      - "ptr"  # Deprecated but still valid
+    allowed_qualifiers:
+      - "+"  # Pass
+      - "-"  # Fail
+      - "~"  # SoftFail
+      - "?"  # Neutral
+    required_all: true
+    
+  dmarc:
+    required_version: "v=DMARC1"
+    required_tags:
+      - "p"  # Policy
+    optional_tags:
+      - "sp"   # Subdomain policy
+      - "rua"  # Aggregate reports
+      - "ruf"  # Forensic reports
+      - "fo"   # Forensic options
+      - "adkim" # DKIM alignment
+      - "aspf"  # SPF alignment
+      - "pct"   # Percentage
+      - "rf"    # Report format
+      - "ri"    # Report interval
+    valid_policies:
+      - "none"
+      - "quarantine"
+      - "reject"
+    valid_alignment:
+      - "r"  # Relaxed
+      - "s"  # Strict
+    max_percentage: 100
+    min_percentage: 0
+
+# Common configurations for different use cases
+use_cases:
+  startup:
+    spf_template: "standard"
+    dmarc_template: "monitoring"
+    deployment_strategy: "conservative"
+    monitoring_duration: 14
+    
+  small_business:
+    spf_template: "standard"
+    dmarc_template: "quarantine"
+    deployment_strategy: "conservative"
+    monitoring_duration: 7
+    
+  enterprise:
+    spf_template: "advanced"
+    dmarc_template: "enterprise"
+    deployment_strategy: "enterprise"
+    monitoring_duration: 30
+    
+  high_security:
+    spf_template: "strict"
+    dmarc_template: "reject"
+    deployment_strategy: "aggressive"
+    monitoring_duration: 7
+    
+  migration:
+    spf_template: "transitional"
+    dmarc_template: "monitoring"
+    deployment_strategy: "conservative"
+    monitoring_duration: 21
+
+# Record generation helpers
+helpers:
+  ip_validation:
+    ipv4_regex: "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    ipv6_regex: "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$"
+    
+  domain_validation:
+    domain_regex: "^[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]*\\.[a-zA-Z]{2,}$"
+    subdomain_regex: "^[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]*$"
+    
+  email_validation:
+    email_regex: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    
+  policy_recommendations:
+    new_domain:
+      initial_policy: "none"
+      recommended_duration: 14
+      next_policy: "quarantine"
+      
+    established_domain:
+      initial_policy: "quarantine"
+      recommended_duration: 7
+      next_policy: "reject"
+      
+    high_volume:
+      initial_policy: "none"
+      recommended_duration: 30
+      gradual_rollout: true

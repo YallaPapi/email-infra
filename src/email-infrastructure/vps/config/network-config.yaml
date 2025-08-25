@@ -1,0 +1,176 @@
+# Network Configuration for Cold Email Infrastructure VPS
+# This file configures network interfaces and IP addresses for the email system
+
+# Primary interface configuration (auto-detected during setup)
+primary_interface: "eth0"
+primary_ip: "10.0.0.10"
+gateway: "10.0.0.1"
+netmask: "24"
+
+# Additional IP addresses to configure for email sending
+# Add your additional IPs provided by your VPS provider here
+additional_ips:
+  # Example configuration - replace with your actual IPs
+  - ip: "10.0.0.11"
+    netmask: "24"
+    interface: "eth0"  # Optional: specify interface, defaults to primary
+    comment: "Additional IP for email sending - Campaign A"
+    enabled: true
+    
+  - ip: "10.0.0.12"
+    netmask: "24"
+    interface: "eth0"
+    comment: "Additional IP for email sending - Campaign B"
+    enabled: true
+    
+  - ip: "10.0.0.13"
+    netmask: "24"
+    interface: "eth0"
+    comment: "Additional IP for email sending - Campaign C"
+    enabled: true
+    
+  # Add more IPs as needed
+  # - ip: "YOUR_IP_HERE"
+  #   netmask: "24"
+  #   comment: "Description of IP usage"
+  #   enabled: true
+
+# DNS configuration
+dns_servers:
+  - "8.8.8.8"         # Google DNS
+  - "8.8.4.4"         # Google DNS Secondary
+  - "1.1.1.1"         # Cloudflare DNS
+  - "1.0.0.1"         # Cloudflare DNS Secondary
+
+# Network interface options
+interface_options:
+  mtu: 1500             # Maximum Transmission Unit
+  metric: 100           # Route metric
+  auto_configure: true  # Auto-configure interfaces on boot
+
+# IP rotation settings for email sending
+ip_rotation:
+  enabled: true
+  strategy: "round_robin"  # Options: round_robin, random, weighted
+  cooldown_minutes: 30     # Minutes to wait before reusing an IP
+  max_emails_per_ip: 100   # Maximum emails per IP before rotation
+  blacklist_check: true    # Check IP against blacklists
+  
+  # Weighted rotation (if strategy is "weighted")
+  ip_weights:
+    # Higher weight = more likely to be selected
+    # "10.0.0.11": 3
+    # "10.0.0.12": 2
+    # "10.0.0.13": 1
+
+# Health monitoring for IP addresses
+health_monitoring:
+  enabled: true
+  check_interval_minutes: 15
+  timeout_seconds: 30
+  
+  # Tests to perform on each IP
+  tests:
+    connectivity: true      # Test basic connectivity
+    reverse_dns: true      # Check reverse DNS resolution
+    blacklist: true        # Check against common blacklists
+    smtp_test: false       # Test SMTP connectivity (may trigger spam filters)
+  
+  # Blacklist checking services (requires API keys)
+  blacklist_services:
+    - name: "spamhaus"
+      enabled: false
+      api_key: ""
+    - name: "barracuda"
+      enabled: false
+      api_key: ""
+
+# Firewall integration
+firewall:
+  auto_configure: true    # Automatically configure firewall rules
+  allow_ping: true       # Allow ICMP ping
+  rate_limiting: true    # Enable rate limiting for SMTP ports
+
+# Advanced network settings
+advanced:
+  # TCP window scaling
+  tcp_window_scaling: true
+  
+  # TCP congestion control
+  tcp_congestion_control: "cubic"
+  
+  # Network buffer sizes
+  rmem_max: 16777216
+  wmem_max: 16777216
+  
+  # Connection tracking
+  nf_conntrack_max: 65536
+  
+  # IP forwarding (usually disabled for mail servers)
+  ip_forward: false
+
+# Logging configuration
+logging:
+  enabled: true
+  level: "INFO"          # DEBUG, INFO, WARNING, ERROR
+  log_file: "/var/log/network-manager.log"
+  max_log_size_mb: 100
+  max_log_files: 10
+
+# Email service integration
+email_integration:
+  # Bind specific services to specific IPs
+  service_ip_mapping:
+    postfix: "auto"       # auto, specific IP, or list of IPs
+    dovecot: "auto"
+    nginx: "auto"
+    
+  # IP warm-up configuration
+  warmup:
+    enabled: true
+    initial_daily_limit: 50
+    increase_rate: 10      # Emails per day increase
+    target_daily_limit: 1000
+    warmup_duration_days: 30
+
+# Backup and restore
+backup:
+  enabled: true
+  backup_path: "/etc/network/backup"
+  retain_backups: 30     # Days to retain backups
+  auto_backup: true      # Backup before changes
+
+# Monitoring integration
+monitoring:
+  prometheus_metrics: true
+  grafana_dashboard: true
+  alerts:
+    ip_down: true
+    high_packet_loss: true
+    blacklist_detection: true
+
+# Example environment-specific configurations
+environments:
+  development:
+    additional_ips: []
+    health_monitoring:
+      check_interval_minutes: 60
+    ip_rotation:
+      max_emails_per_ip: 10
+      
+  staging:
+    additional_ips:
+      - ip: "192.168.1.100"
+        netmask: "24"
+        comment: "Staging IP"
+        
+  production:
+    # Use the main configuration above
+    inherit_main: true
+    
+    # Production-specific overrides
+    health_monitoring:
+      check_interval_minutes: 5
+    
+    logging:
+      level: "WARNING"

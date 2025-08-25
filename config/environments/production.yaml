@@ -1,0 +1,78 @@
+---
+# Production Environment Configuration
+project:
+  environment: "production"
+
+# Production-specific component settings
+components:
+  dns:
+    provider: "cloudflare"
+    staging_mode: false
+    debug_enabled: false
+    cache_ttl: 3600
+    
+  mailcow:
+    ssl_staging: false
+    debug_mode: false
+    skip_ssl_verification: false
+    auto_renewal: true
+    
+  monitoring:
+    check_interval: 300
+    debug_logging: false
+    alert_all_failures: true
+    
+  vps:
+    security_hardening: true
+    allow_password_auth: false
+    fail2ban_enabled: true
+
+# Production logging - focused and efficient
+logging:
+  level: "WARNING"
+  console_output: false
+  file: "data/logs/production.log"
+  rotation: "daily"
+  max_size: "100MB"
+
+# Production security - maximum security
+security:
+  api_key_rotation_days: 30
+  password_complexity: "high"
+  session_timeout: 1800  # 30 minutes
+  max_failed_attempts: 3
+  lockout_duration: 1800
+  require_2fa: true
+
+# Production API settings - restricted
+api:
+  host: "0.0.0.0"
+  port: 8080
+  cors_enabled: false
+  debug_mode: false
+  rate_limit_per_minute: 60
+  require_https: true
+
+# Production backup settings - comprehensive
+backup:
+  schedule: "0 1 * * *"  # Daily at 1 AM
+  retention_days: 90
+  compression: true
+  encryption: true
+  remote_storage: true
+  verify_backups: true
+
+# Production monitoring - comprehensive
+monitoring:
+  health_check_interval: 120
+  metrics_retention_days: 365
+  alerting_enabled: true
+  alert_channels: ["email", "webhook"]
+
+# Production performance - optimized for stability
+performance:
+  worker_processes: 8
+  max_concurrent_tasks: 50
+  cache_ttl: 7200  # 2 hours
+  batch_size: 500
+  connection_pooling: true

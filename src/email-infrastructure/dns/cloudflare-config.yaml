@@ -1,0 +1,278 @@
+# Cloudflare DNS Configuration for Cold Email Infrastructure
+# This file contains configuration settings for the DNS manager
+
+cloudflare:
+  # API Configuration
+  api_token: ${CLOUDFLARE_API_TOKEN}  # Set via environment variable
+  api_endpoint: "https://api.cloudflare.com/client/v4"
+  
+  # Account Settings (optional)
+  account_id: ""
+  account_email: ""
+  
+  # Zone Management
+  auto_create_zones: false
+  zone_settings:
+    always_use_https: "on"
+    automatic_https_rewrites: "on"
+    browser_cache_ttl: 14400
+    challenge_ttl: 1800
+    development_mode: "off"
+    email_obfuscation: "on"
+    hotlink_protection: "off"
+    ip_geolocation: "on"
+    ipv6: "on"
+    min_tls_version: "1.2"
+    minify:
+      css: "on"
+      html: "on"
+      js: "on"
+    mirage: "off"
+    mobile_redirect:
+      status: "off"
+    opportunistic_encryption: "on"
+    polish: "off"
+    prefetch_preload: "off"
+    response_buffering: "off"
+    rocket_loader: "off"
+    security_level: "medium"
+    server_side_exclude: "on"
+    sort_query_string_for_cache: "off"
+    ssl: "flexible"
+    tls_1_3: "zrt"
+    waf: "off"
+
+# Rate Limiting Configuration
+rate_limit:
+  requests_per_second: 4    # Cloudflare API limit
+  burst_limit: 10           # Maximum burst requests
+  retry_after: 5            # Seconds to wait on rate limit
+  backoff_factor: 2         # Exponential backoff multiplier
+
+# Retry Configuration
+retry:
+  max_attempts: 3           # Maximum retry attempts
+  backoff_factor: 2         # Backoff multiplier
+  initial_delay: 1          # Initial delay in seconds
+  max_delay: 60             # Maximum delay in seconds
+
+# DNS Configuration
+dns:
+  default_ttl: 300          # Default TTL for new records
+  min_ttl: 120              # Minimum allowed TTL
+  max_ttl: 86400            # Maximum allowed TTL
+  
+  # Record Type Specific Settings
+  record_types:
+    A:
+      default_ttl: 300
+      proxied: false
+    AAAA:
+      default_ttl: 300
+      proxied: false
+    CNAME:
+      default_ttl: 300
+      proxied: false
+    MX:
+      default_ttl: 300
+      proxied: false        # MX records cannot be proxied
+    TXT:
+      default_ttl: 300
+      proxied: false        # TXT records cannot be proxied
+    SRV:
+      default_ttl: 300
+      proxied: false        # SRV records cannot be proxied
+    PTR:
+      default_ttl: 86400
+      proxied: false
+
+# Email Infrastructure Specific Settings
+email:
+  # Default mail subdomain
+  mail_subdomain: "mail"
+  
+  # DKIM Configuration
+  dkim:
+    default_selector: "default"
+    key_size: 2048
+    algorithm: "rsa-sha256"
+    
+  # SPF Configuration
+  spf:
+    default_policy: "~all"    # Soft fail
+    max_dns_lookups: 10       # RFC limit
+    include_mx: true
+    include_a: true
+    
+  # DMARC Configuration
+  dmarc:
+    default_policy: "quarantine"  # none, quarantine, reject
+    subdomain_policy: "quarantine"
+    percentage: 100
+    interval: 86400           # Report interval in seconds
+    failure_options: ["0", "1", "d", "s"]
+    report_format: "afrf"
+    
+  # MX Configuration
+  mx:
+    primary_priority: 10
+    backup_priority: 20
+    backup_enabled: true
+
+# Propagation Settings
+propagation:
+  check_interval: 30        # Seconds between propagation checks
+  max_wait_time: 1800       # Maximum wait time for propagation
+  required_percentage: 80   # Minimum percentage for successful propagation
+  nameservers:              # Nameservers to check for propagation
+    - "8.8.8.8"             # Google
+    - "8.8.4.4"             # Google
+    - "1.1.1.1"             # Cloudflare
+    - "1.0.0.1"             # Cloudflare
+    - "208.67.222.222"      # OpenDNS
+    - "208.67.220.220"      # OpenDNS
+    - "9.9.9.9"             # Quad9
+    - "149.112.112.112"     # Quad9
+
+# Backup and Recovery
+backup:
+  enabled: true
+  auto_backup: true         # Backup before making changes
+  backup_directory: "/var/backups/dns"
+  retention_days: 30        # Days to keep backups
+  compression: true         # Compress backup files
+  
+  # Backup naming
+  filename_format: "{domain}-backup-{timestamp}.{format}"
+  timestamp_format: "%Y%m%d-%H%M%S"
+  formats: ["json", "yaml"]
+
+# Monitoring and Alerting
+monitoring:
+  enabled: true
+  check_interval: 300       # Seconds between health checks
+  alert_on_changes: true    # Alert when records change
+  alert_on_failures: true   # Alert on DNS failures
+  
+  # Health Check Endpoints
+  health_checks:
+    dns_resolution: true
+    mx_connectivity: true
+    smtp_connectivity: true
+    blacklist_status: true
+  
+  # Notification Settings
+  notifications:
+    webhook_url: ""         # Webhook for alerts
+    email_alerts: false     # Email notifications
+    slack_webhook: ""       # Slack notifications
+    discord_webhook: ""     # Discord notifications
+
+# Security Settings
+security:
+  api_key_rotation: 90      # Days before API key rotation reminder
+  audit_logging: true       # Log all API operations
+  sensitive_data_masking: true  # Mask sensitive data in logs
+  
+  # Allowed Operations (for restricted API tokens)
+  allowed_operations:
+    - "Zone:Read"
+    - "Zone.Zone:Read"
+    - "Zone.DNS:Edit"
+    - "Zone.Zone Settings:Read"
+  
+  # IP Restrictions (optional)
+  allowed_ips: []           # Restrict API access to specific IPs
+
+# Cache Settings
+cache:
+  enabled: true
+  ttl: 300                  # Cache TTL in seconds
+  max_size: 1000            # Maximum cache entries
+  zones_cache_ttl: 3600     # Zone list cache TTL
+  
+# Logging Configuration
+logging:
+  level: "INFO"             # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "/var/log/dns-manager.log"
+  max_size: "10MB"          # Maximum log file size
+  backup_count: 5           # Number of backup log files
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Log Rotation
+  rotation:
+    when: "midnight"        # daily, hourly, midnight
+    interval: 1             # Rotation interval
+    
+# Development and Testing
+development:
+  dry_run: false            # Simulate operations without making changes
+  verbose: false            # Extra verbose output
+  test_mode: false          # Use test endpoints
+  mock_responses: false     # Mock API responses for testing
+
+# Performance Optimization
+performance:
+  concurrent_requests: 5    # Maximum concurrent API requests
+  batch_size: 10            # Records per batch operation
+  connection_pool_size: 10  # HTTP connection pool size
+  request_timeout: 30       # Request timeout in seconds
+  
+# Error Handling
+error_handling:
+  continue_on_error: false  # Continue processing on non-critical errors
+  error_threshold: 5        # Maximum errors before stopping
+  retry_on_timeout: true    # Retry on timeout errors
+  retry_on_rate_limit: true # Retry on rate limit errors
+
+# Advanced Features
+advanced:
+  # Geo-location based records
+  geo_location:
+    enabled: false
+    default_location: "US"
+  
+  # Load balancing
+  load_balancing:
+    enabled: false
+    algorithm: "round_robin"  # round_robin, weighted, geo
+  
+  # Failover
+  failover:
+    enabled: false
+    health_check_interval: 60
+    failure_threshold: 3
+  
+  # DNSSEC
+  dnssec:
+    enabled: false
+    algorithm: 13           # ECDSA P-256 with SHA-256
+    
+# Template Overrides
+templates:
+  # Override default templates
+  custom_spf_template: ""
+  custom_dmarc_template: ""
+  custom_mx_template: ""
+  
+# Integration Settings
+integrations:
+  # Email service integrations
+  mailcow:
+    enabled: false
+    api_url: ""
+    api_key: ""
+  
+  postfix:
+    enabled: false
+    config_path: "/etc/postfix"
+  
+  # Monitoring integrations
+  prometheus:
+    enabled: false
+    metrics_port: 8080
+    metrics_path: "/metrics"
+  
+  grafana:
+    enabled: false
+    dashboard_url: ""

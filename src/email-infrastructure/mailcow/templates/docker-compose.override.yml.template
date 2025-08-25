@@ -1,0 +1,440 @@
+# Docker Compose Override Template for Mailcow
+# This file provides additional customizations to the main docker-compose.yml
+# Copy and customize as needed
+
+version: '3.7'
+
+services:
+
+  # ------------------------------------------------------------------------------
+  # NGINX-MAILCOW (Web Server / Reverse Proxy)
+  # ------------------------------------------------------------------------------
+  nginx-mailcow:
+    # Custom volumes for SSL certificates or additional configs
+    volumes:
+      # Custom SSL certificates (uncomment if not using Let's Encrypt)
+      # - ./data/assets/ssl/cert.pem:/etc/ssl/mail/cert.pem:ro
+      # - ./data/assets/ssl/key.pem:/etc/ssl/mail/key.pem:ro
+      
+      # Custom nginx configurations
+      - ./data/conf/nginx/custom.conf:/etc/nginx/conf.d/custom.conf:ro
+      
+      # Custom error pages
+      # - ./data/assets/custom/error_pages:/usr/share/nginx/html/error_pages:ro
+    
+    # Additional environment variables
+    environment:
+      # Custom nginx worker settings
+      - NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-128m}
+    
+    # Custom labels for monitoring/management
+    labels:
+      - "mailcow.component=nginx"
+      - "mailcow.description=Web server and reverse proxy"
+
+  # ------------------------------------------------------------------------------
+  # POSTFIX-MAILCOW (Mail Transfer Agent)
+  # ------------------------------------------------------------------------------
+  postfix-mailcow:
+    # Additional volumes
+    volumes:
+      # Custom Postfix main.cf additions
+      - ./data/conf/postfix/extra_main.cf:/opt/postfix/conf/extra_main.cf:ro
+      
+      # Custom transport maps
+      # - ./data/conf/postfix/custom_transport:/opt/postfix/conf/custom_transport:ro
+      
+      # Custom header checks
+      # - ./data/conf/postfix/custom_header_checks:/opt/postfix/conf/custom_header_checks:ro
+    
+    # Performance tuning environment variables
+    environment:
+      # Process limits
+      - POSTFIX_MAX_PROCESSES=${POSTFIX_MAX_PROCESSES:-100}
+      
+      # Memory management
+      - POSTFIX_QUEUE_MINFREE=${POSTFIX_QUEUE_MINFREE:-100000000}
+      
+      # Connection limits
+      - POSTFIX_SMTPD_CLIENT_CONNECTION_COUNT_LIMIT=${POSTFIX_ANVIL_CONN_COUNT_LIMIT:-50}
+      
+      # Rate limiting
+      - POSTFIX_ANVIL_RATE_TIME_UNIT=${POSTFIX_ANVIL_RATE_TIME_UNIT:-60s}
+      - POSTFIX_ANVIL_CONN_RATE_LIMIT=${POSTFIX_ANVIL_CONN_RATE_LIMIT:-30}
+    
+    labels:
+      - "mailcow.component=postfix"
+      - "mailcow.description=Mail transfer agent"
+
+  # ------------------------------------------------------------------------------
+  # DOVECOT-MAILCOW (IMAP/POP3 Server)
+  # ------------------------------------------------------------------------------
+  dovecot-mailcow:
+    # Additional volumes
+    volumes:
+      # Custom Dovecot configurations
+      - ./data/conf/dovecot/extra.conf:/usr/local/etc/dovecot/conf.d/extra.conf:ro
+      
+      # Custom sieve scripts
+      # - ./data/conf/dovecot/sieve:/usr/local/lib/dovecot/sieve:ro
+    
+    # Performance and security settings
+    environment:
+      # Connection limits
+      - DOVECOT_MAX_CONNECTIONS=${DOVECOT_MAX_CONNECTIONS:-200}
+      
+      # Master user settings (for migrations)
+      - DOVECOT_MASTER_AUTO=${DOVECOT_MASTER_AUTO:-0}
+      - DOVECOT_MASTER_USER=${DOVECOT_MASTER_USER:-}
+      - DOVECOT_MASTER_PASS=${DOVECOT_MASTER_PASS:-}
+    
+    labels:
+      - "mailcow.component=dovecot"
+      - "mailcow.description=IMAP/POP3 server"
+
+  # ------------------------------------------------------------------------------
+  # RSPAMD-MAILCOW (Spam Filter)
+  # ------------------------------------------------------------------------------
+  rspamd-mailcow:
+    # Additional volumes for custom configurations
+    volumes:
+      # Custom Rspamd configurations
+      - ./data/conf/rspamd/custom:/etc/rspamd/local.d/custom:ro
+      
+      # Custom neural networks or statistics
+      # - ./data/assets/rspamd/custom_stats:/var/lib/rspamd/custom:rw
+    
+    # Memory limits and settings
+    environment:
+      # Worker settings
+      - RSPAMD_WORKER_COUNT=${RSPAMD_WORKER_COUNT:-1}
+      
+      # Memory limits
+      - RSPAMD_MAX_MEM=${RSPAMD_MAX_MEM:-512m}
+    
+    labels:
+      - "mailcow.component=rspamd"
+      - "mailcow.description=Spam filtering engine"
+
+  # ------------------------------------------------------------------------------
+  # REDIS-MAILCOW (Cache and Session Storage)
+  # ------------------------------------------------------------------------------
+  redis-mailcow:
+    # Redis configuration
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+      --save ${REDIS_SAVE_INTERVAL:-900 1}
+      --appendonly ${REDIS_APPENDONLY:-yes}
+      --appendfsync ${REDIS_APPENDFSYNC:-everysec}
+    
+    labels:
+      - "mailcow.component=redis"
+      - "mailcow.description=Cache and session storage"
+
+  # ------------------------------------------------------------------------------
+  # MYSQL-MAILCOW (Database)
+  # ------------------------------------------------------------------------------
+  mysql-mailcow:
+    # Additional volumes for custom configurations
+    volumes:
+      # Custom MySQL configuration
+      - ./data/conf/mysql/extra.cnf:/etc/mysql/conf.d/extra.cnf:ro
+    
+    # MySQL performance tuning
+    environment:
+      # InnoDB settings
+      - MYSQL_INNODB_BUFFER_POOL_SIZE=${MYSQL_INNODB_BUFFER_POOL_SIZE:-256M}
+      - MYSQL_INNODB_LOG_FILE_SIZE=${MYSQL_INNODB_LOG_FILE_SIZE:-64M}
+      
+      # Connection settings
+      - MYSQL_MAX_CONNECTIONS=${MYSQL_MAX_CONNECTIONS:-200}
+      
+      # Query cache
+      - MYSQL_QUERY_CACHE_SIZE=${MYSQL_QUERY_CACHE_SIZE:-32M}
+    
+    labels:
+      - "mailcow.component=mysql"
+      - "mailcow.description=Database server"
+
+  # ------------------------------------------------------------------------------
+  # PHP-FPM-MAILCOW (Web Application Backend)
+  # ------------------------------------------------------------------------------
+  php-fpm-mailcow:
+    # Additional volumes for customization
+    volumes:
+      # Custom PHP configuration
+      - ./data/conf/phpfpm/php-custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      
+      # Custom themes or assets
+      # - ./data/assets/custom/themes:/web/themes/custom:ro
+    
+    # PHP performance settings
+    environment:
+      # Memory and execution limits
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-256M}
+      - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-300}
+      - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-128M}
+      - PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-128M}
+      
+      # FPM settings
+      - PHP_FPM_MAX_CHILDREN=${PHP_FPM_MAX_CHILDREN:-25}
+      - PHP_FPM_START_SERVERS=${PHP_FPM_START_SERVERS:-5}
+      
+      # Custom theme
+      - MAILCOW_THEME=${MAILCOW_THEME:-default}
+    
+    labels:
+      - "mailcow.component=php-fpm"
+      - "mailcow.description=Web application backend"
+
+  # ------------------------------------------------------------------------------
+  # SOGo-MAILCOW (Groupware - Optional)
+  # ------------------------------------------------------------------------------
+  sogo-mailcow:
+    # Additional configuration
+    environment:
+      # Session settings
+      - SOGO_EXPIRE_SESSION=${SOGO_EXPIRE_SESSION:-480}
+      
+      # Performance settings
+      - SOGO_WORKERS_COUNT=${SOGO_WORKERS_COUNT:-3}
+      - SOGO_MAX_UPLOAD_SIZE=${SOGO_MAX_UPLOAD_SIZE:-104857600}
+      
+      # LDAP integration (if enabled)
+      - SOGO_LDAP_ENABLED=${LDAP_ENABLED:-NO}
+      - SOGO_LDAP_URI=${LDAP_URI:-}
+      - SOGO_LDAP_BASE_DN=${LDAP_BASE_DN:-}
+    
+    # Additional volumes for customization
+    volumes:
+      # Custom SOGo theme
+      # - ./data/assets/sogo/custom:/usr/lib/GNUstep/SOGo/WebServerResources/custom:ro
+    
+    labels:
+      - "mailcow.component=sogo"
+      - "mailcow.description=Groupware server"
+    
+    # Only start if not explicitly skipped
+    profiles:
+      - sogo
+
+  # ------------------------------------------------------------------------------
+  # SOLR-MAILCOW (Full-Text Search - Optional)
+  # ------------------------------------------------------------------------------
+  solr-mailcow:
+    # Performance tuning
+    environment:
+      # JVM heap size
+      - SOLR_HEAP=${SOLR_HEAP:-512m}
+      
+      # Additional JVM options
+      - SOLR_OPTS=${SOLR_OPTS:--XX:+UseG1GC -XX:+PerfDisableSharedMem}
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: ${SOLR_MEMORY_LIMIT:-1024m}
+    
+    labels:
+      - "mailcow.component=solr"
+      - "mailcow.description=Full-text search engine"
+    
+    profiles:
+      - solr
+
+  # ------------------------------------------------------------------------------
+  # CLAMD-MAILCOW (Antivirus - Optional)
+  # ------------------------------------------------------------------------------
+  clamd-mailcow:
+    # ClamAV settings
+    environment:
+      # Database update frequency
+      - CLAMD_FRESHCLAM_CHECKS=${CLAMD_FRESHCLAM_CHECKS:-24}
+      
+      # Memory usage
+      - CLAMD_MAX_SCAN_SIZE=${CLAMD_MAX_SCAN_SIZE:-104857600}
+      - CLAMD_MAX_FILE_SIZE=${CLAMD_MAX_FILE_SIZE:-26214400}
+    
+    labels:
+      - "mailcow.component=clamd"
+      - "mailcow.description=Antivirus scanner"
+    
+    profiles:
+      - clamd
+
+  # ------------------------------------------------------------------------------
+  # WATCHDOG-MAILCOW (Health Monitor)
+  # ------------------------------------------------------------------------------
+  watchdog-mailcow:
+    # Monitoring configuration
+    environment:
+      # Check intervals
+      - WATCHDOG_VERBOSE=${WATCHDOG_VERBOSE:-0}
+      - WATCHDOG_EXTERNAL_CHECKS=${WATCHDOG_EXTERNAL_CHECKS:-0}
+      - WATCHDOG_NOTIFY_EMAIL=${WATCHDOG_NOTIFY_EMAIL:-}
+    
+    labels:
+      - "mailcow.component=watchdog"
+      - "mailcow.description=Health monitoring service"
+
+  # ------------------------------------------------------------------------------
+  # DOCKERAPI-MAILCOW (Docker API Proxy)
+  # ------------------------------------------------------------------------------
+  dockerapi-mailcow:
+    labels:
+      - "mailcow.component=dockerapi"
+      - "mailcow.description=Docker API proxy"
+
+  # ------------------------------------------------------------------------------
+  # ACME-MAILCOW (SSL Certificate Management)
+  # ------------------------------------------------------------------------------
+  acme-mailcow:
+    # Let's Encrypt configuration
+    environment:
+      # Staging mode for testing
+      - LE_STAGING=${LE_STAGING:-0}
+      
+      # Additional domains
+      - ADDITIONAL_SAN=${ADDITIONAL_SAN:-}
+      
+      # Skip checks
+      - SKIP_LETS_ENCRYPT=${SKIP_LETS_ENCRYPT:-n}
+      - SKIP_IP_CHECK=${SKIP_IP_CHECK:-n}
+      - SKIP_HTTP_VERIFICATION=${SKIP_HTTP_VERIFICATION:-n}
+    
+    labels:
+      - "mailcow.component=acme"
+      - "mailcow.description=SSL certificate management"
+
+  # ------------------------------------------------------------------------------
+  # NETDATA-MAILCOW (System Monitoring - Optional)
+  # ------------------------------------------------------------------------------
+  netdata-mailcow:
+    # Netdata configuration
+    environment:
+      - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN:-}
+      - NETDATA_CLAIM_URL=${NETDATA_CLAIM_URL:-}
+      - NETDATA_CLAIM_ROOMS=${NETDATA_CLAIM_ROOMS:-}
+    
+    # Additional volumes for monitoring
+    volumes:
+      # Custom Netdata configuration
+      - ./data/conf/netdata/custom.conf:/etc/netdata/netdata.conf:ro
+      
+      # System monitoring
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    
+    ports:
+      - "${NETDATA_BIND:-127.0.0.1:19999}:19999"
+    
+    labels:
+      - "mailcow.component=netdata"
+      - "mailcow.description=System monitoring"
+    
+    profiles:
+      - netdata
+
+  # ------------------------------------------------------------------------------
+  # CUSTOM SERVICES
+  # ------------------------------------------------------------------------------
+  
+  # Example: Custom log aggregation service
+  # logrotate:
+  #   image: logrotate/logrotate:latest
+  #   volumes:
+  #     - ./data/logs:/logs:rw
+  #     - ./data/conf/logrotate/logrotate.conf:/etc/logrotate.conf:ro
+  #   environment:
+  #     - CRON_SCHEDULE=${LOGROTATE_SCHEDULE:-0 2 * * *}
+  #   restart: unless-stopped
+  #   labels:
+  #     - "mailcow.component=logrotate"
+  #     - "mailcow.description=Log rotation service"
+
+  # Example: Backup service
+  # backup:
+  #   image: restic/restic:latest
+  #   volumes:
+  #     - ./data:/data:ro
+  #     - ./backups:/backups:rw
+  #   environment:
+  #     - RESTIC_REPOSITORY=${BACKUP_REPOSITORY:-/backups}
+  #     - RESTIC_PASSWORD=${BACKUP_PASSWORD:-}
+  #   command: >
+  #     sh -c "
+  #       while true; do
+  #         restic backup /data
+  #         sleep 86400
+  #       done
+  #     "
+  #   restart: unless-stopped
+  #   labels:
+  #     - "mailcow.component=backup"
+  #     - "mailcow.description=Backup service"
+
+# ------------------------------------------------------------------------------
+# NETWORKS
+# ------------------------------------------------------------------------------
+networks:
+  # Custom external network (uncomment if needed)
+  # external_network:
+  #   external: true
+  #   name: ${EXTERNAL_NETWORK_NAME:-mailcow-network}
+
+# ------------------------------------------------------------------------------
+# VOLUMES
+# ------------------------------------------------------------------------------
+volumes:
+  # Custom volumes for persistent data
+  custom_configs:
+    driver: local
+  
+  # Example: External volume for mail data
+  # mail_data:
+  #   external: true
+  #   name: ${EXTERNAL_MAIL_VOLUME:-mailcow-mail-data}
+
+# ------------------------------------------------------------------------------
+# ADDITIONAL CONFIGURATION NOTES
+# ------------------------------------------------------------------------------
+#
+# 1. Environment Variables:
+#    All ${VARIABLE_NAME:-default} syntax allows overriding via mailcow.conf
+#
+# 2. Profiles:
+#    Services with profiles only start when explicitly enabled
+#    Use: docker-compose --profile solr --profile netdata up -d
+#
+# 3. Resource Limits:
+#    Uncomment and adjust resource limits based on your server capacity
+#
+# 4. Security:
+#    - Always use strong passwords for database and API access
+#    - Restrict network access where possible
+#    - Keep all services updated
+#
+# 5. Monitoring:
+#    - Enable Netdata for system monitoring
+#    - Set up log aggregation for large deployments
+#    - Configure health checks and alerts
+#
+# 6. Backup:
+#    - Implement automated backup strategies
+#    - Test restore procedures regularly
+#    - Store backups in multiple locations
+#
+# 7. Performance:
+#    - Adjust memory limits based on usage patterns
+#    - Monitor resource usage and scale accordingly
+#    - Use SSD storage for database and mail data
+#
+# 8. Custom Services:
+#    - Add monitoring, backup, or integration services as needed
+#    - Use appropriate labels for service discovery
+#    - Follow Docker best practices for custom containers

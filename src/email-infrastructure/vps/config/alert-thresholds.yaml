@@ -1,0 +1,299 @@
+# Alert Thresholds Configuration for Cold Email Infrastructure VPS
+# Define system resource thresholds that trigger alerts and warnings
+
+# System Resource Thresholds
+system:
+  cpu:
+    warning_threshold: 70    # CPU usage percentage
+    critical_threshold: 85
+    sustained_minutes: 5     # Minutes above threshold before alerting
+    
+  memory:
+    warning_threshold: 75    # Memory usage percentage  
+    critical_threshold: 90
+    sustained_minutes: 3
+    
+  disk:
+    warning_threshold: 80    # Disk usage percentage
+    critical_threshold: 95
+    check_paths:
+      - "/"
+      - "/var"
+      - "/var/log"
+      - "/tmp"
+    
+  load_average:
+    # Thresholds relative to CPU count
+    warning_multiplier: 1.5  # 1.5x CPU count
+    critical_multiplier: 2.0 # 2.0x CPU count
+    check_period: "1min"     # 1min, 5min, 15min
+
+# Network Thresholds
+network:
+  connectivity:
+    max_ping_time_ms: 1000   # Maximum acceptable ping time
+    packet_loss_warning: 5   # Packet loss percentage
+    packet_loss_critical: 15
+    
+  interface:
+    max_errors_per_minute: 10
+    max_drops_per_minute: 5
+    
+  bandwidth:
+    warning_threshold_mbps: 800   # 80% of 1Gbps
+    critical_threshold_mbps: 950  # 95% of 1Gbps
+
+# Service Health Thresholds  
+services:
+  required_services:
+    - name: "docker"
+      critical: true
+      restart_attempts: 3
+      
+    - name: "ufw"
+      critical: true
+      restart_attempts: 1
+      
+    - name: "fail2ban"
+      critical: false
+      restart_attempts: 2
+      
+    - name: "ssh"
+      critical: true
+      restart_attempts: 1
+      
+  optional_services:
+    - name: "postfix"
+      critical: false
+      restart_attempts: 3
+      
+    - name: "dovecot" 
+      critical: false
+      restart_attempts: 3
+      
+    - name: "nginx"
+      critical: false
+      restart_attempts: 3
+
+# Port Monitoring
+ports:
+  required_ports:
+    - port: 22
+      name: "SSH"
+      protocol: "tcp"
+      critical: true
+      
+  mail_ports:
+    - port: 25
+      name: "SMTP"
+      protocol: "tcp"
+      critical: false
+      
+    - port: 587
+      name: "SMTP Submission"
+      protocol: "tcp"
+      critical: false
+      
+    - port: 465
+      name: "SMTPS"
+      protocol: "tcp"
+      critical: false
+      
+    - port: 143
+      name: "IMAP"
+      protocol: "tcp"
+      critical: false
+      
+    - port: 993
+      name: "IMAPS"
+      protocol: "tcp"
+      critical: false
+      
+  web_ports:
+    - port: 80
+      name: "HTTP"
+      protocol: "tcp"
+      critical: false
+      
+    - port: 443
+      name: "HTTPS" 
+      protocol: "tcp"
+      critical: false
+
+# Security Thresholds
+security:
+  failed_login_attempts:
+    warning_threshold: 10    # Per hour
+    critical_threshold: 25   # Per hour
+    time_window_minutes: 60
+    
+  active_connections:
+    ssh_warning: 10         # Simultaneous SSH connections
+    ssh_critical: 20
+    
+  log_monitoring:
+    error_rate_warning: 50   # Errors per hour
+    error_rate_critical: 100
+    
+    suspicious_patterns:
+      - "authentication failure"
+      - "connection refused"
+      - "permission denied"
+      - "invalid user"
+      - "bad protocol version"
+
+# Email Infrastructure Specific
+email:
+  ip_health:
+    max_response_time_ms: 2000
+    blacklist_check_interval_hours: 6
+    
+  sending_limits:
+    # Per IP address limits
+    emails_per_hour_warning: 80
+    emails_per_hour_critical: 95
+    
+    # Bounce rate thresholds
+    bounce_rate_warning: 5    # Percentage
+    bounce_rate_critical: 10
+    
+    # Complaint rate thresholds  
+    complaint_rate_warning: 0.1  # Percentage
+    complaint_rate_critical: 0.5
+
+# Temperature Monitoring (if supported)
+temperature:
+  cpu_warning: 70      # Celsius
+  cpu_critical: 85
+  system_warning: 60
+  system_critical: 75
+
+# Disk I/O Thresholds
+disk_io:
+  read_latency_warning_ms: 50
+  read_latency_critical_ms: 100
+  
+  write_latency_warning_ms: 50
+  write_latency_critical_ms: 100
+  
+  queue_depth_warning: 32
+  queue_depth_critical: 64
+  
+  utilization_warning: 80    # Percentage
+  utilization_critical: 95
+
+# Process Monitoring
+processes:
+  zombie_processes_warning: 5
+  zombie_processes_critical: 10
+  
+  high_cpu_processes:
+    cpu_threshold: 50        # Single process CPU usage
+    memory_threshold_gb: 1   # Single process memory usage
+    
+  process_count_limits:
+    total_warning: 500
+    total_critical: 1000
+
+# Log File Monitoring
+log_files:
+  max_size_mb: 500          # Per log file
+  max_total_size_gb: 5      # Total log directory size
+  
+  growth_rate_warning_mb_per_hour: 50
+  growth_rate_critical_mb_per_hour: 100
+  
+  monitored_logs:
+    - path: "/var/log/auth.log"
+      patterns: ["Failed password", "authentication failure"]
+      
+    - path: "/var/log/mail.log" 
+      patterns: ["warning", "error", "fatal"]
+      
+    - path: "/var/log/syslog"
+      patterns: ["error", "critical", "alert", "emergency"]
+
+# Backup and Recovery
+backup:
+  max_backup_age_hours: 24
+  min_backup_count: 7
+  backup_size_change_threshold: 50  # Percentage change warning
+
+# Performance Baselines
+baselines:
+  # Establish performance baselines over time
+  cpu_baseline_days: 7      # Days to calculate baseline
+  memory_baseline_days: 7
+  network_baseline_days: 14
+  
+  # Deviation thresholds from baseline
+  deviation_warning: 25     # Percentage deviation
+  deviation_critical: 50
+
+# Time-based Thresholds
+time_based:
+  business_hours:
+    start: "08:00"
+    end: "18:00"
+    timezone: "UTC"
+    
+    # Different thresholds during business hours
+    stricter_thresholds: true
+    cpu_warning_business: 60
+    cpu_critical_business: 75
+    
+  maintenance_windows:
+    # Times when alerts should be suppressed
+    - day: "sunday"
+      start: "02:00"
+      end: "04:00"
+      description: "Weekly maintenance window"
+
+# Integration Settings
+integrations:
+  prometheus:
+    enabled: true
+    scrape_interval: 30      # Seconds
+    
+  grafana:
+    enabled: true
+    dashboard_refresh: 30    # Seconds
+    
+  alertmanager:
+    enabled: true
+    group_wait: 10           # Seconds
+    group_interval: 300      # Seconds
+    repeat_interval: 3600    # Seconds
+
+# Alert Routing
+alert_routing:
+  default_severity: "warning"
+  
+  severity_escalation:
+    warning:
+      channels: ["log"]
+      
+    critical:
+      channels: ["log", "email", "webhook"]
+      escalation_delay_minutes: 15
+      
+    emergency:
+      channels: ["log", "email", "webhook", "sms"]
+      immediate_escalation: true
+
+# Custom Alert Rules
+custom_rules:
+  - name: "Email service down"
+    condition: "postfix_down OR dovecot_down"
+    severity: "critical"
+    message: "Email services are not running"
+    
+  - name: "Multiple service failures"
+    condition: "failed_services >= 3"
+    severity: "emergency"
+    message: "Multiple critical services have failed"
+    
+  - name: "Disk space critically low"
+    condition: "disk_usage > 95"
+    severity: "emergency"
+    message: "Disk space is critically low - immediate action required"

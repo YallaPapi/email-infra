@@ -1,0 +1,109 @@
+Product Requirements Document (PRD): Self-Hosted Cold Email Infrastructure Automation
+
+Overview
+========
+Automate the deployment and setup of a scalable, self-hosted cold email infrastructure on an Ubuntu (or Debian) VPS server. The system should provision domains, IPs, mailboxes, authentication records, deliverability monitoring, and provide an easy way to manage daily sending activities.
+
+Goals
+=====
+- Fully scriptable, modular installation – suitable for running via a coding agent directly on the server.
+- Works headless (command line only).
+- Target: 100–500 mailboxes, multiple sending domains, multiple IP addresses.
+- Minimizes reliance on paid services; uses open-source software and free DNS hosting (Cloudflare).
+- Includes automated DNS record configuration, mailbox creation, security/authentication setup, and monitoring.
+
+Functional Requirements
+=======================
+
+1. VPS & Network Preparation
+-----------------------------
+- OS: Ubuntu 22.04 LTS or Debian 12.
+- Support setup for multiple IPv4 addresses (provided by hosting provider).
+    - Assign each IP to network interface.
+    - Allow agent to query and list available IPs after setup.
+
+2. DNS Configuration
+--------------------
+- Integrate with Cloudflare DNS API (credentials/config passed to agent).
+- For each domain:
+    - Set up required records (A, MX, TXT for SPF/DKIM/DMARC, PTR/rDNS as appropriate).
+    - Ensure DNS records match mail server IP assignments.
+    - Provide status/success logs for each record.
+
+3. Mail Server Installation
+---------------------------
+- Install and configure Mailcow Dockerized stack.
+    - Automate via CLI: install Docker, docker-compose, git; clone repo; configure.
+    - Script generation of Mailcow .env/config file:
+        - Set hostname, domain names, IP address assignments.
+    - Pull and launch containers via docker-compose.
+
+4. Domain & Mailbox Provisioning
+---------------------------------
+- Automate creation of domains within Mailcow (API/web admin CLI calls).
+- For each domain:
+    - Create a specified number of mailboxes (format from variable/list).
+    - Assign randomized strong passwords.
+    - Output credentials to a secure file.
+- Optionally group mailboxes by domain, assign to specific sending IPs.
+
+5. Authentication & Security
+-----------------------------
+- Generate DKIM key pairs in Mailcow; retrieve public keys for each domain.
+- Automate updating DNS DKIM records via Cloudflare API.
+- Set SPF and DMARC records as prescribed.
+- Automate reverse DNS (PTR) setup via Hetzner API or output required settings for manual input.
+
+6. IP & Domain Warmup
+----------------------
+- Provide bash/Python script or Cron task for gradual IP and mailbox warmup:
+    - Initial slow sending ramp (10–20 emails/day/IP), doubling weekly.
+    - Ability to schedule inter-mailbox exchanges for warmup.
+    - Optionally, connect to Gmail/Outlook mailboxes for reply simulation.
+
+7. Monitoring & Alerts
+----------------------
+- Integrate or provide scripts for checking IPs/domains against major blacklists (using MXToolbox API or HetrixTools).
+- Automated reporting on DNS config status, SMTP connectivity, deliverability (optionally, via Google Postmaster Tools setup).
+- Log daily/weekly stats to file or dashboard.
+
+8. Automation & API Integration
+--------------------------------
+- Scripts/CLI commands for:
+    - Adding/removing domains and mailboxes.
+    - Updating DNS records.
+    - Restarting/reconfiguring Mailcow services.
+    - Full install and teardown process.
+- All steps run from command line—compatible with common agent frameworks (e.g., n8n, Ansible, direct Python/bash).
+
+Non-Functional Requirements
+===========================
+- Modular and idempotent scripts (safe to re-run, detects previous state, logs steps).
+- Secure storage of credentials and configuration files.
+- Error handling with clear status/output.
+- Documentation/comments for every major step.
+- Designed for a single VPS, but scalable to multiple servers if required.
+
+Optional Features
+=================
+- Automation for cleaning bounced/spam mailboxes and suppression lists.
+- Automated backup and restore of config and mailbox data.
+- Optional webhook or notification integration for system status.
+- Ability to add support for Windows servers with hMailServer if required.
+
+Agent Instructions
+==================
+- Document all actions in log files.
+- Only use open-source/free software unless otherwise specified.
+- When cloud API keys/tokens are needed, accept from config or environment variables.
+- Provide summary and next-steps checklist after initial execution.
+
+Success Criteria
+================
+- Mailcow installed and running on the VPS.
+- Domains and mailboxes created and properly connected to corresponding IP addresses.
+- All DNS records (SPF, DKIM, DMARC, MX, PTR) correctly set via Cloudflare.
+- Mail server passes basic deliverability tests, and can send/receive to/from Gmail/Outlook.
+- All setup and management tasks can be performed by script/agent, with clear outputs and error handling.
+
+End of PRD – ready for coding agent implementation and testing on Ubuntu/Debian VPS.

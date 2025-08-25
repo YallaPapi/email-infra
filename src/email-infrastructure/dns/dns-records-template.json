@@ -1,0 +1,473 @@
+{
+  "template_version": "1.0",
+  "template_name": "cold-email-dns-template",
+  "description": "Complete DNS record template for cold email infrastructure",
+  "created": "2025-01-25",
+  "author": "DNS Automation System",
+  "variables": {
+    "domain": "example.com",
+    "subdomain": "mail",
+    "server_ip": "192.168.1.100",
+    "backup_ip": "192.168.1.101",
+    "dkim_selector": "default",
+    "dkim_public_key": "v=DKIM1;k=rsa;p=PLACEHOLDER_PUBLIC_KEY",
+    "spf_includes": [
+      "_spf.google.com",
+      "amazonses.com"
+    ],
+    "dmarc_policy": "quarantine",
+    "dmarc_email": "postmaster@${domain}",
+    "mx_priority": 10,
+    "ttl_default": 300,
+    "ttl_mx": 300,
+    "ttl_txt": 300,
+    "ttl_srv": 300
+  },
+  "domain": "${domain}",
+  "delete_extra": false,
+  "backup_before_sync": true,
+  "validation_rules": {
+    "spf_max_length": 255,
+    "dmarc_required": true,
+    "mx_backup_required": true,
+    "dkim_required": true
+  },
+  "records": [
+    {
+      "type": "A",
+      "name": "${domain}",
+      "content": "${server_ip}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Main domain A record - points to primary mail server",
+      "priority": "high",
+      "category": "primary"
+    },
+    {
+      "type": "A", 
+      "name": "${subdomain}",
+      "content": "${server_ip}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Mail server A record - primary email server",
+      "priority": "critical",
+      "category": "email"
+    },
+    {
+      "type": "A",
+      "name": "www",
+      "content": "${server_ip}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "WWW subdomain A record - web interface",
+      "priority": "medium",
+      "category": "web"
+    },
+    {
+      "type": "A",
+      "name": "webmail",
+      "content": "${server_ip}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Webmail interface A record",
+      "priority": "medium",
+      "category": "email"
+    },
+    {
+      "type": "MX",
+      "name": "${domain}",
+      "content": "${subdomain}.${domain}",
+      "priority": "${mx_priority}",
+      "ttl": "${ttl_mx}",
+      "proxied": false,
+      "comment": "Primary mail exchanger - handles incoming email",
+      "priority": "critical",
+      "category": "email"
+    },
+    {
+      "type": "MX",
+      "name": "${domain}",
+      "content": "${subdomain}.${domain}",
+      "priority": "${mx_priority + 10}",
+      "ttl": "${ttl_mx}",
+      "proxied": false,
+      "comment": "Backup mail exchanger - redundancy for email delivery",
+      "priority": "high",
+      "category": "email"
+    },
+    {
+      "type": "TXT",
+      "name": "${domain}",
+      "content": "v=spf1 ip4:${server_ip} a:${subdomain}.${domain} include:_spf.google.com include:amazonses.com ~all",
+      "ttl": "${ttl_txt}",
+      "proxied": false,
+      "comment": "SPF record - specifies authorized email senders",
+      "priority": "critical",
+      "category": "email_auth",
+      "validation": {
+        "max_length": 255,
+        "must_contain": ["v=spf1"],
+        "should_end_with": ["~all", "-all"]
+      }
+    },
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "content": "v=DMARC1;p=${dmarc_policy};rua=mailto:${dmarc_email};ruf=mailto:${dmarc_email};fo=1;adkim=r;aspf=r;pct=100;rf=afrf;ri=86400",
+      "ttl": "${ttl_txt}",
+      "proxied": false,
+      "comment": "DMARC policy record - email authentication and reporting",
+      "priority": "critical",
+      "category": "email_auth",
+      "validation": {
+        "must_contain": ["v=DMARC1"],
+        "policies": ["none", "quarantine", "reject"]
+      }
+    },
+    {
+      "type": "TXT",
+      "name": "${dkim_selector}._domainkey",
+      "content": "${dkim_public_key}",
+      "ttl": "${ttl_txt}",
+      "proxied": false,
+      "comment": "DKIM public key - cryptographic email authentication",
+      "priority": "critical",
+      "category": "email_auth",
+      "validation": {
+        "must_contain": ["v=DKIM1"],
+        "should_contain": ["k=rsa", "p="]
+      }
+    },
+    {
+      "type": "TXT",
+      "name": "_domainkey",
+      "content": "o=~",
+      "ttl": "${ttl_txt}",
+      "proxied": false,
+      "comment": "Domain key policy - relaxed DKIM policy",
+      "priority": "medium",
+      "category": "email_auth"
+    },
+    {
+      "type": "TXT",
+      "name": "${domain}",
+      "content": "v=BIMI1; l=; a=",
+      "ttl": "${ttl_txt}",
+      "proxied": false,
+      "comment": "BIMI record - Brand Indicators for Message Identification (optional)",
+      "priority": "low",
+      "category": "email_auth",
+      "optional": true
+    },
+    {
+      "type": "CNAME",
+      "name": "autoconfig",
+      "content": "${subdomain}.${domain}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Thunderbird autoconfig - automatic email client configuration",
+      "priority": "medium",
+      "category": "email_config"
+    },
+    {
+      "type": "CNAME",
+      "name": "autodiscover",
+      "content": "${subdomain}.${domain}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Outlook autodiscover - automatic email client configuration",
+      "priority": "medium",
+      "category": "email_config"
+    },
+    {
+      "type": "CNAME",
+      "name": "imap",
+      "content": "${subdomain}.${domain}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "IMAP server CNAME - points to mail server",
+      "priority": "medium",
+      "category": "email_config"
+    },
+    {
+      "type": "CNAME",
+      "name": "smtp",
+      "content": "${subdomain}.${domain}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "SMTP server CNAME - points to mail server",
+      "priority": "medium",
+      "category": "email_config"
+    },
+    {
+      "type": "CNAME",
+      "name": "pop3",
+      "content": "${subdomain}.${domain}",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "POP3 server CNAME - points to mail server",
+      "priority": "low",
+      "category": "email_config"
+    },
+    {
+      "type": "SRV",
+      "name": "_submission._tcp",
+      "content": "0 1 587 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "Mail submission service - SMTP submission on port 587",
+      "priority": "high",
+      "category": "email_services",
+      "service_details": {
+        "service": "_submission",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 587,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_imap._tcp",
+      "content": "0 1 143 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "IMAP service - unencrypted IMAP on port 143",
+      "priority": "medium",
+      "category": "email_services",
+      "service_details": {
+        "service": "_imap",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 143,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_imaps._tcp",
+      "content": "0 1 993 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "IMAPS service - encrypted IMAP on port 993",
+      "priority": "high",
+      "category": "email_services",
+      "service_details": {
+        "service": "_imaps",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 993,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_pop3._tcp",
+      "content": "0 1 110 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "POP3 service - unencrypted POP3 on port 110",
+      "priority": "low",
+      "category": "email_services",
+      "service_details": {
+        "service": "_pop3",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 110,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_pop3s._tcp",
+      "content": "0 1 995 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "POP3S service - encrypted POP3 on port 995",
+      "priority": "medium",
+      "category": "email_services",
+      "service_details": {
+        "service": "_pop3s",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 995,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_caldav._tcp",
+      "content": "0 1 80 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "CalDAV service - calendar synchronization",
+      "priority": "low",
+      "category": "groupware",
+      "optional": true,
+      "service_details": {
+        "service": "_caldav",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 80,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "SRV",
+      "name": "_carddav._tcp",
+      "content": "0 1 80 ${subdomain}.${domain}",
+      "ttl": "${ttl_srv}",
+      "proxied": false,
+      "comment": "CardDAV service - contact synchronization",
+      "priority": "low",
+      "category": "groupware",
+      "optional": true,
+      "service_details": {
+        "service": "_carddav",
+        "protocol": "_tcp",
+        "priority": 0,
+        "weight": 1,
+        "port": 80,
+        "target": "${subdomain}.${domain}"
+      }
+    },
+    {
+      "type": "CAA",
+      "name": "${domain}",
+      "content": "0 issue \"letsencrypt.org\"",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "Certificate Authority Authorization - allows Let's Encrypt",
+      "priority": "medium",
+      "category": "security"
+    },
+    {
+      "type": "CAA",
+      "name": "${domain}",
+      "content": "0 issuewild \"letsencrypt.org\"",
+      "ttl": "${ttl_default}",
+      "proxied": false,
+      "comment": "CAA wildcard certificate authorization",
+      "priority": "medium",
+      "category": "security"
+    }
+  ],
+  "deployment_profiles": {
+    "production": {
+      "ttl_override": {
+        "default": 300,
+        "mx": 300,
+        "txt": 300
+      },
+      "validation_strict": true,
+      "backup_required": true,
+      "notifications": true
+    },
+    "staging": {
+      "ttl_override": {
+        "default": 60,
+        "mx": 60,
+        "txt": 60
+      },
+      "validation_strict": false,
+      "backup_required": false,
+      "notifications": false
+    },
+    "testing": {
+      "ttl_override": {
+        "default": 60,
+        "mx": 60,
+        "txt": 60
+      },
+      "validation_strict": false,
+      "backup_required": false,
+      "notifications": false,
+      "dry_run": true
+    }
+  },
+  "health_checks": {
+    "enabled": true,
+    "checks": [
+      {
+        "name": "mx_resolution",
+        "type": "dns",
+        "query": "${domain}",
+        "record_type": "MX",
+        "expected_count": 2
+      },
+      {
+        "name": "spf_validation",
+        "type": "txt_validation",
+        "query": "${domain}",
+        "record_type": "TXT",
+        "pattern": "^v=spf1.*~all$"
+      },
+      {
+        "name": "dkim_presence",
+        "type": "dns",
+        "query": "${dkim_selector}._domainkey.${domain}",
+        "record_type": "TXT",
+        "expected_count": 1
+      },
+      {
+        "name": "dmarc_policy",
+        "type": "txt_validation",
+        "query": "_dmarc.${domain}",
+        "record_type": "TXT",
+        "pattern": "^v=DMARC1.*p=(quarantine|reject).*"
+      },
+      {
+        "name": "smtp_connectivity",
+        "type": "port_check",
+        "host": "${subdomain}.${domain}",
+        "ports": [25, 587, 465]
+      }
+    ]
+  },
+  "monitoring": {
+    "enabled": true,
+    "critical_records": [
+      "MX:${domain}",
+      "A:${subdomain}",
+      "TXT:${domain}:spf",
+      "TXT:_dmarc.${domain}"
+    ],
+    "alert_thresholds": {
+      "propagation_percentage": 80,
+      "response_time_ms": 5000,
+      "error_rate": 0.05
+    }
+  },
+  "automation": {
+    "auto_renewal": {
+      "enabled": true,
+      "check_interval": 86400,
+      "renewal_threshold": 30
+    },
+    "certificate_integration": {
+      "enabled": true,
+      "provider": "letsencrypt",
+      "auto_caa": true
+    },
+    "dkim_rotation": {
+      "enabled": true,
+      "rotation_interval": 2592000,
+      "key_size": 2048
+    }
+  },
+  "security": {
+    "dnssec": {
+      "enabled": false,
+      "algorithm": 13
+    },
+    "caa_enforcement": true,
+    "min_tls_version": "1.2",
+    "hsts_preload": false
+  }
+}

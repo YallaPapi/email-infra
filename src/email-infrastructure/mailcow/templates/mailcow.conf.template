@@ -1,0 +1,306 @@
+# Mailcow Configuration Template
+# This file contains all configurable parameters for Mailcow
+# Copy this file to mailcow.conf and customize as needed
+
+# ------------------------------------------------------------------------------
+# BASIC CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Mailcow hostname - MUST match your domain's MX record
+MAILCOW_HOSTNAME={{MAILCOW_HOSTNAME}}
+
+# Password hashing scheme
+MAILCOW_PASS_SCHEME=BLF-CRYPT
+
+# ------------------------------------------------------------------------------
+# ADMIN CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Default admin email (will be created during setup)
+ADMIN_EMAIL={{ADMIN_EMAIL}}
+
+# ------------------------------------------------------------------------------
+# HTTP/HTTPS CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# HTTP port binding (default: 80)
+HTTP_PORT={{HTTP_PORT}}
+
+# HTTPS port binding (default: 443)
+HTTPS_PORT={{HTTPS_PORT}}
+
+# IP addresses to bind HTTP/HTTPS services
+HTTP_BIND=0.0.0.0
+HTTPS_BIND=0.0.0.0
+
+# ------------------------------------------------------------------------------
+# DATABASE CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Database name
+DBNAME=mailcow
+
+# Database user
+DBUSER=mailcow
+
+# Database password for mailcow user (auto-generated)
+DBPASS={{DB_PASSWORD}}
+
+# Database root password (auto-generated)
+DBROOT={{DB_ROOT_PASSWORD}}
+
+# ------------------------------------------------------------------------------
+# REDIS CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Redis port (internal)
+REDIS_PORT=7654
+
+# ------------------------------------------------------------------------------
+# TIMEZONE CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# System timezone
+TZ={{TIMEZONE}}
+
+# ------------------------------------------------------------------------------
+# SSL/TLS CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Additional Subject Alternative Names for SSL certificate
+# Comma-separated list of domains/IPs
+ADDITIONAL_SAN={{ADDITIONAL_SAN}}
+
+# Skip Let's Encrypt ACME challenge (y/n)
+# Set to 'y' if you want to use your own certificates
+SKIP_LETS_ENCRYPT={{SKIP_LETS_ENCRYPT}}
+
+# Skip HTTP verification (y/n)
+# Useful if running behind a reverse proxy
+SKIP_HTTP_VERIFICATION={{SKIP_HTTP_VERIFICATION}}
+
+# Skip IPv4 check in ACME container (y/n)
+SKIP_IP_CHECK={{SKIP_IP_CHECK}}
+
+# Let's Encrypt staging mode (y/n)
+# Set to 'y' for testing to avoid rate limits
+LE_STAGING={{LE_STAGING}}
+
+# ------------------------------------------------------------------------------
+# SERVICE OPTIMIZATION
+# ------------------------------------------------------------------------------
+
+# Skip ClamAV antivirus (saves ~1GB RAM) (y/n)
+SKIP_CLAMD={{SKIP_CLAMD}}
+
+# Skip Solr full-text search (saves ~512MB RAM) (y/n)
+SKIP_SOLR={{SKIP_SOLR}}
+
+# Skip Sogo groupware (saves ~256MB RAM) (y/n)
+SKIP_SOGO={{SKIP_SOGO}}
+
+# ------------------------------------------------------------------------------
+# SECURITY CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Enable Fail2ban (y/n)
+ENABLE_FAIL2BAN={{ENABLE_FAIL2BAN}}
+
+# Fail2ban network to ignore (CIDR notation)
+FAIL2BAN_WHITELIST={{FAIL2BAN_WHITELIST}}
+
+# Enable watchdog (monitors container health) (y/n)
+USE_WATCHDOG={{USE_WATCHDOG}}
+
+# Watchdog notification email
+WATCHDOG_NOTIFY_EMAIL={{WATCHDOG_NOTIFY_EMAIL}}
+
+# Watchdog external checks (y/n)
+WATCHDOG_EXTERNAL_CHECKS={{WATCHDOG_EXTERNAL_CHECKS}}
+
+# ------------------------------------------------------------------------------
+# API CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Mailcow API key (auto-generated)
+MAILCOW_API_KEY={{MAILCOW_API_KEY}}
+
+# Allow API access from these networks (CIDR notation)
+# Leave empty to allow all
+MAILCOW_API_ALLOW_FROM={{MAILCOW_API_ALLOW_FROM}}
+
+# ------------------------------------------------------------------------------
+# BACKUP CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Backup location
+BACKUP_LOCATION={{BACKUP_LOCATION}}
+
+# ------------------------------------------------------------------------------
+# LOGGING CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Log retention (number of log lines to keep)
+LOG_LINES={{LOG_LINES}}
+
+# Syslog target for Docker logs (optional)
+SYSLOG_TARGET={{SYSLOG_TARGET}}
+
+# ------------------------------------------------------------------------------
+# DOCKER CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Docker Compose project name
+COMPOSE_PROJECT_NAME={{COMPOSE_PROJECT_NAME}}
+
+# Docker Compose version
+DOCKER_COMPOSE_VERSION={{DOCKER_COMPOSE_VERSION}}
+
+# ------------------------------------------------------------------------------
+# MAIL ROUTING CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Default relay host (if using smarthost)
+RELAY_HOST={{RELAY_HOST}}
+
+# Relay host port
+RELAY_PORT={{RELAY_PORT}}
+
+# Relay authentication username
+RELAY_USER={{RELAY_USER}}
+
+# Relay authentication password
+RELAY_PASS={{RELAY_PASS}}
+
+# ------------------------------------------------------------------------------
+# SPAM FILTERING CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Rspamd password (auto-generated if empty)
+RSPAMD_PASSWORD={{RSPAMD_PASSWORD}}
+
+# ------------------------------------------------------------------------------
+# LDAP INTEGRATION (Optional)
+# ------------------------------------------------------------------------------
+
+# Enable LDAP authentication (y/n)
+LDAP_ENABLED={{LDAP_ENABLED}}
+
+# LDAP server URI
+LDAP_URI={{LDAP_URI}}
+
+# LDAP base DN
+LDAP_BASE_DN={{LDAP_BASE_DN}}
+
+# LDAP bind DN
+LDAP_BIND_DN={{LDAP_BIND_DN}}
+
+# LDAP bind password
+LDAP_BIND_PASSWORD={{LDAP_BIND_PASSWORD}}
+
+# ------------------------------------------------------------------------------
+# CUSTOMIZATION
+# ------------------------------------------------------------------------------
+
+# Custom mailcow theme
+MAILCOW_THEME={{MAILCOW_THEME}}
+
+# Default language
+DEFAULT_LANG={{DEFAULT_LANG}}
+
+# Custom logo URL
+CUSTOM_LOGO_URL={{CUSTOM_LOGO_URL}}
+
+# ------------------------------------------------------------------------------
+# ADVANCED CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Custom Dovecot master user (for migration tools)
+DOVECOT_MASTER_USER={{DOVECOT_MASTER_USER}}
+DOVECOT_MASTER_PASS={{DOVECOT_MASTER_PASS}}
+
+# Additional environment variables for containers
+# Format: CONTAINER_NAME_ENV_VAR=value
+
+# Postfix additional settings
+POSTFIX_DISABLE_SENDER_DEPENDENT_DEFAULT_TRANSPORT_MAPS={{POSTFIX_DISABLE_SENDER_DEPENDENT_DEFAULT_TRANSPORT_MAPS}}
+
+# SOGo additional settings
+SOGO_EXPIRE_SESSION={{SOGO_EXPIRE_SESSION}}
+
+# Dovecot additional settings
+DOVECOT_MASTER_AUTO={{DOVECOT_MASTER_AUTO}}
+
+# ------------------------------------------------------------------------------
+# DEVELOPMENT/TESTING
+# ------------------------------------------------------------------------------
+
+# Enable development mode (not for production) (y/n)
+MAILCOW_DEV_MODE={{MAILCOW_DEV_MODE}}
+
+# Disable IPv6 (if having IPv6 issues) (y/n)
+DISABLE_IPV6={{DISABLE_IPV6}}
+
+# ------------------------------------------------------------------------------
+# INTEGRATION SETTINGS
+# ------------------------------------------------------------------------------
+
+# Webhook URL for notifications
+WEBHOOK_URL={{WEBHOOK_URL}}
+
+# Webhook secret for validation
+WEBHOOK_SECRET={{WEBHOOK_SECRET}}
+
+# External DNS server for lookups
+DNS_SERVER={{DNS_SERVER}}
+
+# ------------------------------------------------------------------------------
+# PERFORMANCE TUNING
+# ------------------------------------------------------------------------------
+
+# Maximum number of Postfix processes
+POSTFIX_MAX_PROCESSES={{POSTFIX_MAX_PROCESSES}}
+
+# Dovecot max connections per IP
+DOVECOT_MAX_CONNECTIONS={{DOVECOT_MAX_CONNECTIONS}}
+
+# Nginx worker processes (auto = number of CPU cores)
+NGINX_WORKER_PROCESSES={{NGINX_WORKER_PROCESSES}}
+
+# ------------------------------------------------------------------------------
+# MONITORING CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Enable Netdata monitoring (y/n)
+ENABLE_NETDATA={{ENABLE_NETDATA}}
+
+# Netdata bind address
+NETDATA_BIND={{NETDATA_BIND}}
+
+# Enable Prometheus metrics (y/n)
+ENABLE_METRICS={{ENABLE_METRICS}}
+
+# Metrics bind address
+METRICS_BIND={{METRICS_BIND}}
+
+# ------------------------------------------------------------------------------
+# RATE LIMITING
+# ------------------------------------------------------------------------------
+
+# Postfix rate limiting (connections per time unit)
+POSTFIX_ANVIL_RATE_TIME_UNIT={{POSTFIX_ANVIL_RATE_TIME_UNIT}}
+POSTFIX_ANVIL_CONN_RATE_LIMIT={{POSTFIX_ANVIL_CONN_RATE_LIMIT}}
+POSTFIX_ANVIL_CONN_COUNT_LIMIT={{POSTFIX_ANVIL_CONN_COUNT_LIMIT}}
+
+# ------------------------------------------------------------------------------
+# ADDITIONAL CONFIGURATION
+# ------------------------------------------------------------------------------
+
+# Any additional custom variables can be added here
+# They will be available in all containers as environment variables
+
+# Example custom variables:
+# CUSTOM_VAR_1=value1
+# CUSTOM_VAR_2=value2
+
+# End of configuration file
