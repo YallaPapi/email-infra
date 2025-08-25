@@ -50,7 +50,7 @@ GET /api/v1/dns/domains/{domain}/records
 **Example Request:**
 ```bash
 curl -H "Authorization: Bearer $API_KEY" \
-     "$API_URL/dns/domains/example.com/records?record_type=A"
+     "$API_URL/dns/domains/YOUR_DOMAIN.com/records?record_type=A"
 ```
 
 **Example Response:**
@@ -58,13 +58,13 @@ curl -H "Authorization: Bearer $API_KEY" \
 {
   "success": true,
   "data": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "records": [
       {
         "id": "record_id_123",
         "type": "A",
-        "name": "example.com",
-        "content": "192.168.1.100",
+        "name": "YOUR_DOMAIN.com",
+        "content": "YOUR_SERVER_IP",
         "ttl": 300,
         "created_on": "2024-01-01T00:00:00Z",
         "modified_on": "2024-01-01T00:00:00Z"
@@ -95,8 +95,8 @@ POST /api/v1/dns/domains/{domain}/records
 ```json
 {
   "type": "A",
-  "name": "mail.example.com",
-  "content": "192.168.1.100",
+  "name": "mail.YOUR_DOMAIN.com",
+  "content": "YOUR_SERVER_IP",
   "ttl": 300,
   "priority": 10
 }
@@ -107,8 +107,8 @@ POST /api/v1/dns/domains/{domain}/records
 curl -X POST \
      -H "Authorization: Bearer $API_KEY" \
      -H "Content-Type: application/json" \
-     -d '{"type":"A","name":"mail.example.com","content":"192.168.1.100","ttl":300}' \
-     "$API_URL/dns/domains/example.com/records"
+     -d '{"type":"A","name":"mail.YOUR_DOMAIN.com","content":"YOUR_SERVER_IP","ttl":300}' \
+     "$API_URL/dns/domains/YOUR_DOMAIN.com/records"
 ```
 
 **Example Response:**
@@ -118,8 +118,8 @@ curl -X POST \
   "data": {
     "id": "new_record_id_456",
     "type": "A",
-    "name": "mail.example.com",
-    "content": "192.168.1.100",
+    "name": "mail.YOUR_DOMAIN.com",
+    "content": "YOUR_SERVER_IP",
     "ttl": 300,
     "created_on": "2024-01-01T12:00:00Z"
   }
@@ -168,14 +168,14 @@ POST /api/v1/dns/domains/{domain}/records/bulk
   "records": [
     {
       "type": "A",
-      "name": "example.com",
-      "content": "192.168.1.100",
+      "name": "YOUR_DOMAIN.com",
+      "content": "YOUR_SERVER_IP",
       "ttl": 300
     },
     {
       "type": "MX",
-      "name": "example.com",
-      "content": "mail.example.com",
+      "name": "YOUR_DOMAIN.com",
+      "content": "mail.YOUR_DOMAIN.com",
       "priority": 10,
       "ttl": 300
     }
@@ -201,20 +201,20 @@ GET /api/v1/dns/verify/{domain}
 {
   "success": true,
   "data": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "verification_results": {
       "a_record": {
         "status": "verified",
-        "expected": "192.168.1.100",
-        "actual": "192.168.1.100",
+        "expected": "YOUR_SERVER_IP",
+        "actual": "YOUR_SERVER_IP",
         "propagated": true,
         "nameservers_checked": 8,
         "nameservers_confirmed": 8
       },
       "mx_record": {
         "status": "verified",
-        "expected": "mail.example.com",
-        "actual": "mail.example.com",
+        "expected": "mail.YOUR_DOMAIN.com",
+        "actual": "mail.YOUR_DOMAIN.com",
         "propagated": true
       }
     },
@@ -240,7 +240,7 @@ GET /api/v1/mailcow/domains
   "data": {
     "domains": [
       {
-        "domain_name": "example.com",
+        "domain_name": "YOUR_DOMAIN.com",
         "description": "Example Domain",
         "aliases": 0,
         "mailboxes": 5,
@@ -266,7 +266,7 @@ POST /api/v1/mailcow/domains
 **Request Body:**
 ```json
 {
-  "domain": "example.com",
+  "domain": "YOUR_DOMAIN.com",
   "description": "Example Domain",
   "quota": 5120,
   "mailboxes": 25,
@@ -290,10 +290,10 @@ GET /api/v1/mailcow/domains/{domain}/mailboxes
   "data": {
     "mailboxes": [
       {
-        "username": "user@example.com",
+        "username": "user@YOUR_DOMAIN.com",
         "name": "User Name",
         "active": 1,
-        "domain": "example.com",
+        "domain": "YOUR_DOMAIN.com",
         "local_part": "user",
         "quota": 2048,
         "bytes": 1048576,
@@ -318,9 +318,9 @@ POST /api/v1/mailcow/mailboxes
 ```json
 {
   "local_part": "user",
-  "domain": "example.com",
+  "domain": "YOUR_DOMAIN.com",
   "name": "User Name",
-  "password": "SecurePassword123!",
+  "password": "YOUR_SECURE_PASSWORD",
   "quota": 2048,
   "active": true
 }
@@ -347,12 +347,12 @@ POST /api/v1/mailcow/domains/{domain}/dkim
 {
   "success": true,
   "data": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "selector": "default",
     "dkim_record": "v=DKIM1; k=rsa; p=MIIBIjANBgkq...",
     "dns_record": {
       "type": "TXT",
-      "name": "default._domainkey.example.com",
+      "name": "default._domainkey.YOUR_DOMAIN.com",
       "value": "v=DKIM1; k=rsa; p=MIIBIjANBgkq..."
     }
   }
@@ -415,7 +415,7 @@ GET /api/v1/monitoring/blacklist/{ip_address}
 {
   "success": true,
   "data": {
-    "ip_address": "192.168.1.100",
+    "ip_address": "YOUR_SERVER_IP",
     "status": "clean",
     "checks": [
       {
@@ -449,7 +449,7 @@ POST /api/v1/monitoring/start
 ```json
 {
   "type": "domain",
-  "target": "example.com",
+  "target": "YOUR_DOMAIN.com",
   "checks": ["dns", "blacklist", "ssl"],
   "interval": 300
 }
@@ -488,7 +488,7 @@ GET /api/v1/vps/instances
         "id": "vps_123",
         "name": "mail-server-1",
         "provider": "hetzner",
-        "ip_address": "192.168.1.100",
+        "ip_address": "YOUR_SERVER_IP",
         "status": "running",
         "created": "2024-01-01T00:00:00Z",
         "specs": {
@@ -576,8 +576,8 @@ POST /api/v1/warmup/campaigns
 **Request Body:**
 ```json
 {
-  "domain": "example.com",
-  "mailboxes": ["user1@example.com", "user2@example.com"],
+  "domain": "YOUR_DOMAIN.com",
+  "mailboxes": ["user1@YOUR_DOMAIN.com", "user2@YOUR_DOMAIN.com"],
   "campaign_type": "standard",
   "initial_daily_limit": 50,
   "target_daily_limit": 1000,
@@ -617,28 +617,28 @@ api = EmailInfraAPI(
 
 # DNS operations
 domains = api.dns.list_domains()
-record = api.dns.create_record("example.com", {
+record = api.dns.create_record("YOUR_DOMAIN.com", {
     "type": "A",
-    "name": "mail.example.com",
-    "content": "192.168.1.100",
+    "name": "mail.YOUR_DOMAIN.com",
+    "content": "YOUR_SERVER_IP",
     "ttl": 300
 })
 
 # Mailcow operations
-domain = api.mailcow.create_domain("example.com", {
+domain = api.mailcow.create_domain("YOUR_DOMAIN.com", {
     "description": "Example Domain",
     "quota": 5120
 })
 
-mailbox = api.mailcow.create_mailbox("user@example.com", {
+mailbox = api.mailcow.create_mailbox("user@YOUR_DOMAIN.com", {
     "name": "User Name",
-    "password": "SecurePassword123!",
+    "password": "YOUR_SECURE_PASSWORD",
     "quota": 2048
 })
 
 # Monitoring operations
 status = api.monitoring.get_status()
-blacklist_check = api.monitoring.check_blacklist("192.168.1.100")
+blacklist_check = api.monitoring.check_blacklist("YOUR_SERVER_IP")
 
 # VPS operations
 instances = api.vps.list_instances()
@@ -650,22 +650,22 @@ system_info = api.vps.get_system_info("vps_123")
 ```python
 # Bulk DNS operations
 records = [
-    {"type": "A", "name": "example.com", "content": "192.168.1.100"},
-    {"type": "MX", "name": "example.com", "content": "mail.example.com", "priority": 10}
+    {"type": "A", "name": "YOUR_DOMAIN.com", "content": "YOUR_SERVER_IP"},
+    {"type": "MX", "name": "YOUR_DOMAIN.com", "content": "mail.YOUR_DOMAIN.com", "priority": 10}
 ]
-result = api.dns.create_records_bulk("example.com", records)
+result = api.dns.create_records_bulk("YOUR_DOMAIN.com", records)
 
 # Async operations
 import asyncio
 
 async def async_operations():
     # Async DNS verification
-    verification = await api.dns.verify_domain_async("example.com")
+    verification = await api.dns.verify_domain_async("YOUR_DOMAIN.com")
     
     # Async monitoring
     monitors = await api.monitoring.start_monitoring_async([
-        {"type": "domain", "target": "example.com"},
-        {"type": "ip", "target": "192.168.1.100"}
+        {"type": "domain", "target": "YOUR_DOMAIN.com"},
+        {"type": "ip", "target": "YOUR_SERVER_IP"}
     ])
     
     return verification, monitors
@@ -682,13 +682,13 @@ The API can be accessed via command-line tools:
 
 ```bash
 # List DNS records
-email-infra dns list example.com
+email-infra dns list YOUR_DOMAIN.com
 
 # Create DNS record
-email-infra dns create example.com A mail.example.com 192.168.1.100
+email-infra dns create YOUR_DOMAIN.com A mail.YOUR_DOMAIN.com YOUR_SERVER_IP
 
 # Verify DNS
-email-infra dns verify example.com
+email-infra dns verify YOUR_DOMAIN.com
 ```
 
 ### Mailcow Management CLI
@@ -698,13 +698,13 @@ email-infra dns verify example.com
 email-infra mailcow domains list
 
 # Create domain
-email-infra mailcow domain create example.com --quota 5120
+email-infra mailcow domain create YOUR_DOMAIN.com --quota 5120
 
 # Create mailbox
-email-infra mailcow mailbox create user@example.com --name "User Name"
+email-infra mailcow mailbox create user@YOUR_DOMAIN.com --name "User Name"
 
 # Generate DKIM
-email-infra mailcow dkim generate example.com
+email-infra mailcow dkim generate YOUR_DOMAIN.com
 ```
 
 ### Monitoring CLI
@@ -714,10 +714,10 @@ email-infra mailcow dkim generate example.com
 email-infra monitoring status
 
 # Blacklist check
-email-infra monitoring blacklist check 192.168.1.100
+email-infra monitoring blacklist check YOUR_SERVER_IP
 
 # Start monitoring
-email-infra monitoring start domain example.com
+email-infra monitoring start domain YOUR_DOMAIN.com
 ```
 
 ## Error Handling
@@ -796,11 +796,11 @@ Configure webhooks to receive real-time notifications:
 {
   "event": "dns.record.created",
   "data": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "record": {
       "type": "A",
-      "name": "mail.example.com",
-      "content": "192.168.1.100"
+      "name": "mail.YOUR_DOMAIN.com",
+      "content": "YOUR_SERVER_IP"
     }
   },
   "timestamp": "2024-01-15T14:30:00Z",

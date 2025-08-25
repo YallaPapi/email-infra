@@ -723,7 +723,7 @@ INSERT IGNORE INTO api_keys (
     expires
 ) VALUES (
     'admin',
-    'PLACEHOLDER_API_KEY',
+    '${MAILCOW_API_KEY}',
     'Main administrative API key',
     JSON_OBJECT(
         'domains', JSON_ARRAY('read', 'write', 'delete'),
@@ -867,7 +867,7 @@ initialize_database() {
         docker-compose exec -T "$DB_CONTAINER" mysql -u root -p"$DB_ROOT_PASS" "$DB_NAME" << EOF
 UPDATE api_keys 
 SET api_key = '$MAILCOW_API_KEY', updated = NOW() 
-WHERE key_name = 'admin' AND api_key = 'PLACEHOLDER_API_KEY';
+WHERE key_name = 'admin' AND api_key = '${MAILCOW_API_KEY}';
 EOF
     fi
     

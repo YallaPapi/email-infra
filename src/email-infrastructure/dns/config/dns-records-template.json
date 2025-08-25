@@ -5,15 +5,15 @@
   "created": "2025-01-25",
   "author": "DNS Automation System",
   "variables": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "subdomain": "mail",
-    "server_ip": "192.168.1.100",
-    "backup_ip": "192.168.1.101",
+    "server_ip": "YOUR_SERVER_IP",
+    "backup_ip": "YOUR_BACKUP_IP",
     "dkim_selector": "default",
-    "dkim_public_key": "v=DKIM1;k=rsa;p=PLACEHOLDER_PUBLIC_KEY",
+    "dkim_public_key": "v=DKIM1;k=rsa;p=YOUR_DKIM_PUBLIC_KEY",
     "spf_includes": [
-      "_spf.google.com",
-      "amazonses.com"
+      "YOUR_SPF_INCLUDE_1",
+      "YOUR_SPF_INCLUDE_2"
     ],
     "dmarc_policy": "quarantine",
     "dmarc_email": "postmaster@${domain}",

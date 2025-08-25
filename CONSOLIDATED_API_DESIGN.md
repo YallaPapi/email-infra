@@ -823,10 +823,10 @@ from src.common.api import create_cloudflare_client, create_mailcow_client
 # Create Cloudflare client
 async with create_cloudflare_client(api_token="your_token") as cf_client:
     # List DNS records
-    records = await cf_client.list_dns_records("example.com")
+    records = await cf_client.list_dns_records("YOUR_DOMAIN.com")
     
     # Create a new record
-    new_record = await cf_client.create_dns_record("example.com", {
+    new_record = await cf_client.create_dns_record("YOUR_DOMAIN.com", {
         "type": "A",
         "name": "mail",
         "content": "192.168.1.100",
@@ -834,14 +834,14 @@ async with create_cloudflare_client(api_token="your_token") as cf_client:
     })
 
 # Create Mailcow client
-async with create_mailcow_client(hostname="mail.example.com", api_key="your_key") as mc_client:
+async with create_mailcow_client(hostname="mail.YOUR_DOMAIN.com", api_key="your_key") as mc_client:
     # Get all domains
     domains = await mc_client.get_domains()
     
     # Add a new mailbox
     mailbox = await mc_client.add_mailbox({
         "local_part": "user",
-        "domain": "example.com",
+        "domain": "YOUR_DOMAIN.com",
         "password": "secure_password",
         "quota": 1024
     })

@@ -121,7 +121,7 @@ cache:
 ```json
 {
   "variables": {
-    "domain": "example.com",
+    "domain": "YOUR_DOMAIN.com",
     "server_ip": "192.168.1.100",
     "dkim_selector": "default"
   },
@@ -225,10 +225,10 @@ class MailcowAPI:
 
 **CLI Interface:**
 ```bash
-./automation/domain-manager.sh add example.com "Example Domain" 5120 25 500
+./automation/domain-manager.sh add YOUR_DOMAIN.com "Example Domain" 5120 25 500
 ./automation/domain-manager.sh list table
-./automation/domain-manager.sh dns example.com
-./automation/domain-manager.sh check-dns example.com
+./automation/domain-manager.sh dns YOUR_DOMAIN.com
+./automation/domain-manager.sh check-dns YOUR_DOMAIN.com
 ./automation/domain-manager.sh bulk-add domains.txt
 ```
 
@@ -242,9 +242,9 @@ class MailcowAPI:
 
 **CLI Interface:**
 ```bash
-./automation/mailbox-manager.sh create user@example.com "" "User Name" 2048
-./automation/mailbox-manager.sh list example.com table
-./automation/mailbox-manager.sh update user@example.com quota 4096
+./automation/mailbox-manager.sh create user@YOUR_DOMAIN.com "" "User Name" 2048
+./automation/mailbox-manager.sh list YOUR_DOMAIN.com table
+./automation/mailbox-manager.sh update user@YOUR_DOMAIN.com quota 4096
 ./automation/mailbox-manager.sh bulk-create mailboxes.csv
 ```
 
@@ -258,9 +258,9 @@ class MailcowAPI:
 
 **CLI Interface:**
 ```bash
-./automation/ssl-manager.sh setup-letsencrypt mail.example.com admin@example.com
+./automation/ssl-manager.sh setup-letsencrypt mail.YOUR_DOMAIN.com admin@YOUR_DOMAIN.com
 ./automation/ssl-manager.sh install-custom /path/to/cert.pem /path/to/key.pem
-./automation/ssl-manager.sh verify mail.example.com
+./automation/ssl-manager.sh verify mail.YOUR_DOMAIN.com
 ./automation/ssl-manager.sh renew
 ```
 
@@ -396,7 +396,7 @@ monitoring:
     channels:
       email:
         enabled: true
-        recipients: ["admin@example.com"]
+        recipients: ["admin@YOUR_DOMAIN.com"]
       slack:
         enabled: true
         webhook_url: ${SLACK_WEBHOOK_URL}
@@ -565,7 +565,7 @@ from email_infrastructure.core.event_bus import EventBus
 
 # DNS component publishes events
 EventBus.publish('dns.record.created', {
-    'domain': 'example.com',
+    'domain': 'YOUR_DOMAIN.com',
     'record_type': 'A',
     'record_value': '192.168.1.100'
 })
@@ -586,9 +586,9 @@ Components expose standardized APIs for cross-component communication:
 from email_infrastructure.dns.managers.dns_manager import DNSManager
 
 dns_manager = DNSManager()
-await dns_manager.create_dns_record('example.com', {
+await dns_manager.create_dns_record('YOUR_DOMAIN.com', {
     'type': 'TXT',
-    'name': 'default._domainkey.example.com',
+    'name': 'default._domainkey.YOUR_DOMAIN.com',
     'content': 'v=DKIM1; k=rsa; p=...'
 })
 ```

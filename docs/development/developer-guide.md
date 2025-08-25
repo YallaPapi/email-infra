@@ -1239,7 +1239,7 @@ services:
     environment:
       - POSTGRES_DB=emailinfra_dev
       - POSTGRES_USER=emailinfra
-      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

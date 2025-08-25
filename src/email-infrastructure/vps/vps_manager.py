@@ -655,32 +655,14 @@ def main():
             vps_manager.save_status_to_file(status)
         
         if args.json:
-            print(json.dumps(status, indent=2))
+            # Output JSON format
+            import sys
+            sys.stdout.write(json.dumps(status, indent=2))
         else:
-            print("=== VPS Status ===")
-            print(f"Hostname: {status.get('hostname', 'Unknown')}")
-            print(f"Timestamp: {status.get('timestamp', 'Unknown')}")
-            
-            if 'system' in status:
-                sys_info = status['system']
-                print(f"\nSystem:")
-                print(f"  CPU Usage: {sys_info.get('cpu_usage_percent', 0)}%")
-                print(f"  Memory Usage: {sys_info.get('memory_percent', 0)}% ({sys_info.get('memory_used_gb', 0):.1f}/{sys_info.get('memory_total_gb', 0):.1f} GB)")
-                print(f"  Uptime: {sys_info.get('uptime', 'Unknown')}")
-            
-            if 'network' in status:
-                net_info = status['network']
-                print(f"\nNetwork:")
-                print(f"  Available IPs: {net_info.get('ip_count', 0)}")
-                print(f"  Primary Interface: {net_info.get('primary_interface', 'Unknown')}")
-                connectivity = net_info.get('connectivity', {})
-                print(f"  Internet: {'✓' if connectivity.get('internet') else '✗'}")
-                print(f"  DNS: {'✓' if connectivity.get('dns') else '✗'}")
-            
-            if 'disk' in status:
-                disk_info = status['disk']
-                print(f"\nDisk:")
-                print(f"  Usage: {disk_info.get('percent', 0)}% ({disk_info.get('used_gb', 0):.1f}/{disk_info.get('total_gb', 0):.1f} GB)")
+            # Log status instead of printing
+            logger.info("VPS status retrieved successfully")
+            logger.info(f"Hostname: {status.get('hostname', 'Unknown')}")
+            logger.info(f"Timestamp: {status.get('timestamp', 'Unknown')}")
     
     elif args.command == 'ips':
         ips = vps_manager.get_available_ips()
@@ -696,37 +678,34 @@ def main():
                     continue
             ips = public_ips
         
-        print("Available IP addresses:")
+        logger.info(f"Found {len(ips)} available IP addresses")
         for ip in ips:
-            print(f"  {ip}")
-        print(f"\nTotal: {len(ips)} IPs")
+            logger.info(f"IP: {ip}")
     
     elif args.command == 'interfaces':
         interfaces = vps_manager.get_network_interfaces()
         
-        print("Network Interfaces:")
+        logger.info(f"Found {len(interfaces)} network interfaces")
         for name, info in interfaces.items():
-            print(f"\n{name}:")
-            print(f"  Status: {'UP' if info['is_up'] else 'DOWN'}")
-            print(f"  MTU: {info['mtu']}")
-            print(f"  Addresses:")
+            status = 'UP' if info['is_up'] else 'DOWN'
+            logger.info(f"Interface {name}: {status}, MTU: {info['mtu']}")
             for addr in info['addresses']:
-                print(f"    {addr['ip']}/{addr['netmask']} ({addr['family']})")
+                logger.info(f"  Address: {addr['ip']}/{addr['netmask']} ({addr['family']})")
     
     elif args.command == 'add-ip':
         success = vps_manager.add_ip_alias(args.ip, args.interface, args.netmask)
         if success:
-            print(f"Successfully added IP {args.ip}")
+            logger.info(f"Successfully added IP {args.ip}")
         else:
-            print(f"Failed to add IP {args.ip}")
+            logger.error(f"Failed to add IP {args.ip}")
             sys.exit(1)
     
     elif args.command == 'remove-ip':
         success = vps_manager.remove_ip_alias(args.ip, args.interface)
         if success:
-            print(f"Successfully removed IP {args.ip}")
+            logger.info(f"Successfully removed IP {args.ip}")
         else:
-            print(f"Failed to remove IP {args.ip}")
+            logger.error(f"Failed to remove IP {args.ip}")
             sys.exit(1)
     
     elif args.command == 'rotate-ip':

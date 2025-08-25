@@ -601,9 +601,9 @@ Use staging mode for testing:
 ```python
 # Development configuration
 config = MailcowConfig(
-    hostname="mail.test.com",
-    api_key="test_api_key",
-    verify_ssl=False  # For self-signed certificates
+    hostname="mail.YOUR_DOMAIN.com",
+    api_key="YOUR_API_KEY",
+    verify_ssl=True  # Set to False for self-signed certificates
 )
 
 # Enable debug logging

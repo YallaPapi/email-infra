@@ -60,7 +60,7 @@ SERVER_IP="$2"
 
 if [[ -z "$DOMAIN" ]] || [[ -z "$SERVER_IP" ]]; then
     echo "Usage: $0 <domain> <server_ip>"
-    echo "Example: $0 mail.example.com 192.168.1.100"
+    echo "Example: $0 mail.YOUR_DOMAIN.com 192.168.1.100"
     exit 1
 fi
 

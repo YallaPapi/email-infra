@@ -870,7 +870,7 @@ logger.error("API request failed", extra={
 
 # Structured logging with context
 logger.info("Processing domain", extra={
-    'domain': 'example.com',
+    'domain': 'YOUR_DOMAIN.com',
     'record_count': 15,
     'request_id': 'req_123'
 })
@@ -898,7 +898,7 @@ async def create_dns_record(domain: str, record_data: dict):
 
 # Usage with automatic exception handling
 try:
-    await create_dns_record("example.com", {"type": "A", "name": "mail", "content": "192.168.1.100"})
+    await create_dns_record("YOUR_DOMAIN.com", {"type": "A", "name": "mail", "content": "192.168.1.100"})
 except BaseInfrastructureError as e:
     # All context and suggestions are automatically logged
     print(f"Error: {e.message}")

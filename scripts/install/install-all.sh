@@ -50,7 +50,7 @@ show_usage() {
     echo "  -h, --help              Show this help message"
     echo ""
     echo "Example:"
-    echo "  $0 -e production -d mail.example.com -i 192.168.1.100"
+    echo "  $0 -e production -d mail.YOUR_DOMAIN.com -i 192.168.1.100"
 }
 
 # Parse command line arguments
